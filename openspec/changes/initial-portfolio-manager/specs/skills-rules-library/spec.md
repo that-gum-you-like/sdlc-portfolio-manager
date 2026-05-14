@@ -19,11 +19,15 @@ The system SHALL provide an in-app editor for each library entry that supports m
 - **THEN** the system SHALL prevent the save, surface the parse error inline, and leave the prior version unchanged
 
 ### Requirement: Create new rule or skill
-The system SHALL allow the user to create a new library entry from a template, choosing between `rule` and `skill` types.
+The system SHALL allow the user to create a new library entry from a template, choosing between `rule`, `skill`, `automation`, or `validator` types.
 
 #### Scenario: Create a new rule from blank template
 - **WHEN** a user clicks "New rule", selects the `rule` type, and provides a name
 - **THEN** the system SHALL create a new entry with a stubbed frontmatter and empty body, and open it in the editor
+
+#### Scenario: Create a new validator
+- **WHEN** a user clicks "New validator", selects gate `quality`, and saves with command, pass_exit_codes, and timeout filled in
+- **THEN** the system SHALL persist a `validator`-type entry and surface it under the library filter `type=validator, gate=quality`
 
 ### Requirement: Publish to target repo
 The system SHALL provide a "Publish" action that writes a selected subset of library entries into a target repository's `.cursor/rules/` (for rules) or `.cursor/skills/` (for skills) directory.

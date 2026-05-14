@@ -42,3 +42,14 @@ The system SHALL scope all list/read API queries by the current user's `user_id`
 #### Scenario: Default single-user list returns only local-user rows
 - **WHEN** any list endpoint is called in single-user mode
 - **THEN** the query SHALL include `WHERE user_id = 'local-user'`
+
+### Requirement: Project-scoped foreign keys
+Every user-owned table holding domain rows (work items, comments, questions, library entries, publish history, validation runs, automation runs) SHALL include a `project_id` foreign key (nullable only for library entries, which may be cross-project). Cascading deletes from a project SHALL remove dependent rows.
+
+#### Scenario: Cascade delete on project removal
+- **WHEN** a user deletes a project containing 50 work items and their comments
+- **THEN** the system SHALL remove the project, all 50 work items, and all dependent comments / questions / validation runs / automation runs in a single transaction
+
+#### Scenario: Library entries can be cross-project
+- **WHEN** a library entry is created without specifying `project_id`
+- **THEN** the system SHALL persist it as cross-project (NULL), making it visible from every project's library view

@@ -1,3 +1,18 @@
+## 0. Portfolio > Project hierarchy (foundational — comes before work-items table)
+
+- [ ] 0.1 Schema: `portfolios` table (`id`, `user_id`, `name`, `description`, `created_at`, `updated_at`)
+- [ ] 0.2 Schema: `projects` table (`id`, `portfolio_id`, `name`, `slug`, `description`, `target_repo_path`, `settings_json`, `created_at`, `updated_at`); unique index on `(portfolio_id, slug)`
+- [ ] 0.3 Add `project_id` FK to `work_items`, `comments`, `questions`, `library_entries` (nullable for cross-project), `publish_history`, `validation_runs`, `automation_runs`, `notifications`, `mentions`
+- [ ] 0.4 Migration 0001 creates portfolios + projects + all FK additions in correct order
+- [ ] 0.5 First-run seeds `personal` portfolio and `inbox` project under `local-user`
+- [ ] 0.6 API routes: `GET/POST /api/v1/portfolios`, `GET/PATCH/DELETE /api/v1/portfolios/:id`, `GET/POST /api/v1/projects`, `GET/PATCH/DELETE /api/v1/projects/:slug`
+- [ ] 0.7 Cascade delete: removing a project removes all dependent rows in a single transaction (integration test)
+- [ ] 0.8 UI: `/portfolios` index, `/portfolios/:id` detail with project cards, `/projects/:slug` shell with sub-routes (`/board`, `/backlog`, `/dashboard`, `/settings`)
+- [ ] 0.9 UI: top-level nav with active portfolio + project, switcher dropdown
+- [ ] 0.10 UI: breadcrumbs `Portfolio › Project › Item` on every relevant page
+- [ ] 0.11 UI: project settings page (validation toggles, done-checklist gates, target repo path, published library entries summary)
+- [ ] 0.12 API client (used by CLI): respect a `--project <slug>` flag and/or `PC_PROJECT` env var
+
 ## 1. Monorepo + toolchain
 
 - [ ] 1.1 Add root `package.json` with workspaces (`apps/*`, `packages/*`) and `engines.node >= 22`
@@ -105,6 +120,26 @@
 - [ ] 14.1 `npm run dev` starts Next.js on `:3737` and watches CLI build
 - [ ] 14.2 First-run: create data dir, run migrations, seed library
 - [ ] 14.3 Health-check endpoint `GET /api/v1/health` returning version + db status
+
+## 14b. Validation pipeline
+
+- [ ] 14b.1 Schema: `validation_runs` (`id`, `work_item_id`, `project_id`, `gate`, `validator_entry_id`, `started_at`, `completed_at`, `status`, `exit_code`, `stdout_snippet`, `stderr_snippet`, `findings_json`)
+- [ ] 14b.2 Schema: `evidence_links` (`id`, `comment_id`, `acceptance_criterion_id`, `criterion_text_snapshot`) — connects evidence comments to specific acceptance criteria
+- [ ] 14b.3 Extend `library_entries.type` enum: add `validator` alongside `rule`, `skill`, `automation`
+- [ ] 14b.4 Validator frontmatter schema with Zod: `gate` enum, `command` template, `pass_exit_codes` array, `output_parser` enum, `timeout_seconds` int
+- [ ] 14b.5 Runner service: subprocess with timeout, env whitelist, working dir = project target repo, captured stdout/stderr (truncated to N KB), parsed output per `output_parser`
+- [ ] 14b.6 Parsers: `none`, `junit-xml`, `sarif`, `json-lines` — each producing a structured `findings_json` shape
+- [ ] 14b.7 Auto-trigger gates on `in_progress` → `in_review` transition; mark each `running` until complete
+- [ ] 14b.8 `pc validate <id>` / `pc validate <id> --gate <gate>` CLI commands
+- [ ] 14b.9 `pc comment <id> --kind evidence --criterion <AC-id> <message>` CLI command writing an evidence-linked comment
+- [ ] 14b.10 Done transition validator: enabled gates must have most-recent status `pass` (or `skipped`); else 400 with gate names
+- [ ] 14b.11 Override path: existing override-with-reason mechanism records the failing gate(s)
+- [ ] 14b.12 User-story-acceptance built-in matcher: walk acceptance_criteria, match against (a) test names containing criterion keywords, (b) evidence comments linked via `evidence_links`
+- [ ] 14b.13 Seed default validators per gate (quality, security, bugs, user-story-acceptance) in `cursor-templates/validators/`
+- [ ] 14b.14 Validator publish path: write to project target repo at `.cursor/validators/<gate>-<slug>.json`
+- [ ] 14b.15 UI: validation panel on item detail page with gate rows, last-run, "Run again" actions, expandable run detail
+- [ ] 14b.16 UI: board card gate-status indicator (four colored dots)
+- [ ] 14b.17 Tests: hung validator killed at timeout; failing gate blocks done; override records gate names; acceptance matcher matches by keyword
 
 ## 15. Human-in-the-loop (HITL) thread
 

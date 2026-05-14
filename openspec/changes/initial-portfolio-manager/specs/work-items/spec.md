@@ -1,5 +1,16 @@
 ## ADDED Requirements
 
+### Requirement: Work item belongs to a project
+Every work item SHALL have a `project_id` foreign key referencing a `projects` record. The work item inherits validation gates, done-checklist, default routing, and target-repo binding from its project.
+
+#### Scenario: Create a work item with project_id
+- **WHEN** a client creates a work item with `project_id` matching an existing project
+- **THEN** the system SHALL persist the FK and apply the project's settings to the new item
+
+#### Scenario: Reject missing project_id
+- **WHEN** a client creates a work item without `project_id` and the user has more than one project
+- **THEN** the system SHALL reject the request with a 400 error indicating `project_id` is required; if the user has only the default `personal/inbox` project, the system SHALL default to it
+
 ### Requirement: Work-item types and lifecycle
 The system SHALL support four work-item types — `epic`, `story`, `task`, `bug` — each with a status of `backlog`, `ready`, `in_progress`, `needs-human`, `in_review`, `done`, or `cancelled`. The `needs-human` status indicates work is paused awaiting human input on one or more open questions (see `hitl` capability).
 
@@ -50,3 +61,14 @@ The system SHALL allow zero or more string labels per work item for ad-hoc taggi
 #### Scenario: Add and filter by label
 - **WHEN** a client lists work items filtered by label `frontend`
 - **THEN** the system SHALL return only items whose label set contains `frontend`
+
+### Requirement: Acceptance criteria
+The system SHALL allow a work item to carry an ordered array of acceptance criteria, each with a stable id (e.g., `AC-1`, `AC-2`), a text body, and an optional `evidence_refs` array linking to test names or evidence comments. Acceptance criteria are required for type `requirement` and optional for other types.
+
+#### Scenario: Requirement requires at least one criterion
+- **WHEN** a client creates a `requirement`-type work item with an empty `acceptance_criteria` array
+- **THEN** the system SHALL reject with a 400 error requiring at least one criterion
+
+#### Scenario: Criteria visible on item detail
+- **WHEN** a user opens an item with three acceptance criteria
+- **THEN** the system SHALL render them as a numbered checklist with each criterion's evidence status (matched / unmatched) populated from the acceptance-pipeline validator

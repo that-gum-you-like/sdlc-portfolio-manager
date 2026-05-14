@@ -86,6 +86,22 @@ Cursor's Background Agents are the execution layer; this repo is the management 
 
 **Rationale**: Feature parity with the existing framework is a stated goal; opinionated seeds make first-run useful instead of empty. Persona content port lives in the follow-on `agentic-sdlc-framework-port` change.
 
+### Decision 9: Portfolio > Project hierarchy, not flat project list
+
+**Chosen**: Two-level hierarchy with `portfolios → projects → work items`. Every work item carries a `project_id` FK; every project carries a `portfolio_id` FK.
+
+**Considered**: Flat list of projects with no grouping; folder/tag-based grouping; arbitrary-depth nesting.
+
+**Rationale**: A user managing more than a handful of projects needs grouping (personal vs. work, side projects vs. paid client, etc.). Two levels match Azure DevOps's organizations-and-projects mental model — familiar from the user's stated reference. Arbitrary depth becomes a UI hairball and rarely pays for itself; we can revisit if real users hit the ceiling. Foreign keys go on every domain table from day one because retrofitting `project_id` later is a much larger migration than putting it in now.
+
+### Decision 9a: Validation pipeline is enforced at the done transition with override-with-reason
+
+**Chosen**: Four required gates (`quality`, `security`, `bugs`, `user-story-acceptance`) run automatically when a work item enters `in_review`, each implemented as a `validator` library entry executing a subprocess. The `in_review` → `done` transition is blocked unless all enabled gates have a most-recent `pass`. Failing gates can still pass via the existing override-with-reason path.
+
+**Considered**: Soft enforcement (warnings only); a single monolithic validator runner; embedding lint/security/tests as built-ins.
+
+**Rationale**: The agentic-sdlc case studies (especially "6600 tests / 6 browser bugs") show that documented expectations get skipped under pressure; structural enforcement is the only mechanism that holds up. Four discrete gates parallel the four acceptance dimensions the user explicitly asked for ("quality, security, bugs, and validate it achieves the attached user story") and let each be enabled / overridden / replaced independently. Library-entry-as-validator means users can browse, edit, swap validators in the same UI as rules — no new admin surface. Override-with-reason preserves human judgment over false positives without weakening the default.
+
 ### Decision 9b: HITL is async by default, with optional blocking wait
 
 **Chosen**: `pc ask` returns immediately by default (fire-and-forget); agents that want to block call `pc ask --wait <seconds>` or `pc check-answer <id>`. The portfolio manager does not push answers to running agent processes — the agent decides whether to wait, poll, or pick up answers on its next `pc next` invocation.

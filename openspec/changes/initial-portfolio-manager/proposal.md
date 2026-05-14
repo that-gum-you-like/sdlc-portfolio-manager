@@ -13,6 +13,8 @@ The user has Cursor at work but lacks an Azure-DevOps-style portfolio/work-item 
 - **NEW** Data model uses UUIDs and `user_id` scoping from day one; auth stubbed to a `local-user` constant so multi-user is a stub-swap, not a rewrite
 - **NEW** Cursor Automations integration: the portfolio manager exposes endpoints for Cursor Automations to (a) auto-claim work items moved to `ready` and (b) trigger scheduled prompts (recurring bug reviews, security reviews). Automation definitions are stored in the library so the user can manage them in-UI.
 - **NEW** Human-in-the-loop (HITL) thread: agents can tag the user with questions / decisions / blockers, the user can tag agents back, and the work item visibly enters a `needs-human` state until answered. Comments support `@username` and `@agent-name` mentions; an inbox surfaces all open questions across all items.
+- **NEW** Portfolio > Project hierarchy: top-level `portfolios` group `projects` group work items. Each project links to a target repo, has its own settings (validation gates, done-checklist, automations, published personas), and gets dedicated detail/board/backlog/dashboard views. Portfolio view rolls up across projects.
+- **NEW** Enforced validation pipeline gating the `done` transition: each work item must pass four configurable gates — **quality** (lint + type-check), **security** (security review), **bugs** (tests pass), and **user-story-acceptance** (implementation matches the item's acceptance criteria). Each gate is run by a `validator` entry in the library (a first-class library type) with a defined command, parser, and pass/fail contract. Gate runs produce records visible on the item; failing gates block `done`; the override path remains available with a reason.
 
 ## Capabilities
 
@@ -25,6 +27,8 @@ The user has Cursor at work but lacks an Azure-DevOps-style portfolio/work-item 
 - `local-persistence`: SQLite schema, migrations, and identity model designed single-user-first / multi-user-ready
 - `cursor-automations`: First-class integration with Cursor Automations — endpoint contract for "give me the next ready item," scheduled prompts (bug/security review crons) defined in-library and registered with Cursor, and a UI surface for managing automation definitions
 - `hitl`: Human-in-the-loop thread — structured question/answer model that agents and humans use to unblock each other, with `@-mention` parsing in comments, a unified inbox, `needs-human` work-item state, and async/blocking CLI commands for agents
+- `portfolio-projects`: Two-level hierarchy of `portfolios → projects → work items` with per-project settings (target repo path, validation gates, done-checklist, published personas/rules/automations), portfolio rollup view, and per-project board/backlog/dashboard
+- `validation-pipeline`: Enforced validation gating the `done` transition — quality, security, bugs, and user-story-acceptance gates each run by a configurable library-entry validator that produces a pass/fail record. Per-project enable/disable, override-with-reason path, and full run history surfaced in the UI.
 
 ### Modified Capabilities
 
@@ -36,4 +40,6 @@ The user has Cursor at work but lacks an Azure-DevOps-style portfolio/work-item 
 - **Dependencies (planned)**: Next.js (App Router), better-sqlite3, Drizzle ORM, Tailwind, Zod
 - **External systems**: None at MVP. Future hook into Cursor Background Agents via webhook (out of scope for this change)
 - **Target repos**: Any repo where you want Cursor agents to follow the protocol receives a `.cursor/rules/` set published from the library
+- **Schema**: every user-owned table additionally scoped by `project_id` (and transitively `portfolio_id`), not just `user_id`
+- **Library types**: extended to include `validator` alongside `rule`, `skill`, `automation` (and `doc` from framework-port)
 - **Backlog (deferred)**: Multi-user auth, team contributions/review for the library, versioning/history for rules, MCP server, webhook into Cursor Background Agents, dependency graph + sprint planning, attachments

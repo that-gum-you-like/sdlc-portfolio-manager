@@ -39,6 +39,31 @@ The system SHALL allow filtering the board and backlog by label, assignee, and i
 - **WHEN** a user selects "assignee: cursor-background-agent" in the filter bar
 - **THEN** the system SHALL re-render the board to show only items assigned to that agent
 
+### Requirement: Portfolio + project navigation surfaces
+The system SHALL render a top-level navigation showing the active portfolio + project context and a switcher to change either. The board, backlog, and dashboard SHALL be available both at top-level (across all projects) and scoped per project (`/projects/<slug>/board`, etc.).
+
+#### Scenario: Switch project from the nav
+- **WHEN** a user opens the project switcher and selects "habit-tracker"
+- **THEN** the system SHALL navigate to `/projects/habit-tracker/board` and persist the active-project preference
+
+#### Scenario: Portfolio rollup view
+- **WHEN** a user opens `/portfolios/<id>`
+- **THEN** the system SHALL render a card per project with summary stats (open count, in_progress count, needs-human count, validation pass rate %)
+
+### Requirement: Validation pipeline UI
+The system SHALL render validation gate results on the work-item detail page: a "Validation" panel listing each enabled gate with its current status (pass / fail / running / skipped / error), last-run timestamp, "Run again" action, and (on click) full output / findings.
+
+#### Scenario: View failing gate detail
+- **WHEN** a user clicks the failed `security` gate row on an item detail page
+- **THEN** the system SHALL expand to show stdout snippet, stderr snippet, findings JSON, and exit code from the most recent run
+
+### Requirement: Board cards show validation indicator
+Each board card SHALL include a compact gate-status indicator (e.g., four dots colored pass=green, fail=red, running=yellow, skipped=gray) so the validation state is visible without opening the item.
+
+#### Scenario: Validation indicator on board
+- **WHEN** a user views the board with an item whose four gates resolved to pass, pass, fail, skipped
+- **THEN** the card SHALL render four dots in green, green, red, gray with a tooltip naming each gate
+
 ### Requirement: Item detail page renders questions thread
 The item detail page SHALL render any open and recently-answered questions as a distinct thread above (or visually separated from) the general comments — open questions prominent with an inline answer form, answered questions collapsible.
 
