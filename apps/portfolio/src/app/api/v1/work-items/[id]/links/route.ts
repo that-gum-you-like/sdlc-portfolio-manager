@@ -17,9 +17,9 @@ interface Params {
 const LinkBody = z.object({
   provider: z
     .enum(['github', 'gitlab', 'bitbucket', 'local-git', 'other'])
-    .default('github'),
-  kind: z.enum(['branch', 'commit', 'pr', 'mr', 'deploy', 'doc']).default('pr'),
-  ref: z.string().min(1).max(200),
+    .optional(),
+  kind: z.enum(['branch', 'commit', 'pr', 'mr', 'deploy', 'doc']).optional(),
+  ref: z.string().min(1).max(200).optional(),
   url: z.string().min(1).max(2000),
   state: z.string().max(80).optional(),
 });
@@ -82,9 +82,9 @@ export async function POST(request: Request, { params }: Params) {
 
   // Auto-fill provider/kind/ref from URL if caller passed only url
   const inferred = inferFromUrl(parsed.data.url);
-  const provider = inferred?.provider ?? parsed.data.provider;
-  const kind = inferred?.kind ?? parsed.data.kind;
-  const ref = inferred?.ref ?? parsed.data.ref;
+  const provider = parsed.data.provider ?? inferred?.provider ?? 'other';
+  const kind = parsed.data.kind ?? inferred?.kind ?? 'doc';
+  const ref = parsed.data.ref ?? inferred?.ref ?? parsed.data.url;
 
   const [link] = db
     .insert(workItemLinks)

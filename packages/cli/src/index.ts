@@ -435,6 +435,44 @@ program
     }
   });
 
+// pc handoff <id> --to <agent> --reason "..." — explicit agent → agent delegation
+program
+  .command('handoff <id>')
+  .description('Hand off a work item from this agent to another. Records reason + context; reassigns the item unless --no-reassign.')
+  .requiredOption('--to <agent>', 'Target agent (e.g. frontend-developer)')
+  .requiredOption('--reason <reason>', 'Why this handoff (one sentence)')
+  .option('--context <text>', 'Optional longer context (else stdin)')
+  .option('--from <agent>', 'Override the from-agent (else PC_AGENT)')
+  .option('--no-reassign', "Don't change the work-item assignee")
+  .action(
+    async (
+      id: string,
+      opts: { to: string; reason: string; context?: string; from?: string; reassign?: boolean },
+    ) => {
+      const cfg = getGlobalOpts();
+      const context = opts.context ?? readStdinSync().trim() ?? undefined;
+      const payload: Record<string, unknown> = {
+        fromAgent: opts.from ?? cfg.agent,
+        toAgent: opts.to,
+        reason: opts.reason,
+      };
+      if (context) payload.context = context;
+      if (opts.reassign === false) payload.reassign = false;
+      try {
+        const { data } = await apiRequest<{ handoff: { id: string; toAgent: string } }>(
+          cfg.apiUrl,
+          'POST',
+          `/api/v1/work-items/${id}/handoffs`,
+          payload,
+        );
+        const h = data?.handoff;
+        if (h) process.stdout.write(`${h.id}\t→ ${h.toAgent}\n`);
+      } catch (err) {
+        handleApiError(err);
+      }
+    },
+  );
+
 // pc link <id> --url <url> [--ref <ref>] — attach a PR / commit / branch to a work item
 program
   .command('link <id>')

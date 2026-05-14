@@ -16,14 +16,13 @@ interface Props {
   activePortfolioName: string;
   activePortfolioId: string;
   allProjects: ProjectOption[];
-  subRoute?: 'board' | 'backlog' | 'dashboard' | 'settings' | 'home';
+  subRoute?: 'board' | 'backlog' | 'settings' | 'home';
 }
 
 const SUB_LABEL: Record<string, string> = {
   home: 'Overview',
   board: 'Board',
   backlog: 'Backlog',
-  dashboard: 'Dashboard',
   settings: 'Settings',
 };
 
@@ -99,12 +98,6 @@ export function ProjectContextBar({
           className={subRoute === 'backlog' ? 'active' : ''}
         >
           {SUB_LABEL.backlog}
-        </Link>
-        <Link
-          href={`/projects/${activeProjectSlug}/dashboard`}
-          className={subRoute === 'dashboard' ? 'active' : ''}
-        >
-          {SUB_LABEL.dashboard}
         </Link>
         <Link
           href={`/projects/${activeProjectSlug}/settings`}
