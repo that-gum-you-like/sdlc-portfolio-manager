@@ -4,14 +4,50 @@ A local, single-user-first portfolio + work-item + library manager for agentic S
 
 Azure DevOps Boards mental model + Paperclip control-plane ergonomics, but local, lightweight, Cursor-native.
 
+## Getting started
+
+> Full guide: **[docs/getting-started.md](./docs/getting-started.md)**
+
+```bash
+pnpm install
+pnpm rebuild better-sqlite3       # one-time: builds the native SQLite binding
+pnpm dev                          # starts Next.js on http://localhost:3737
+
+# install the pc CLI globally so Cursor agents can call it from anywhere:
+cd packages/cli && pnpm build && npm link
+pc --help
+```
+
+Open <http://localhost:3737> → click **Portfolios** in the top nav → create your first portfolio + project. Set the project's **target repo path** to the folder you open in Cursor. Then publish the seeded `agent-protocol` rule into that repo via **Library → agent-protocol → Publish**. Open the repo in Cursor; agents will start calling `pc` automatically.
+
+## What's seeded on first run
+
+| Type | Count | What they are |
+|---|---|---|
+| Rules | 2 | `agent-protocol`, `work-item-discipline` — teach Cursor agents to use `pc` |
+| Automations | 3 | `weekly-security-review`, `weekly-bug-triage`, `discovery-default-pipeline` |
+| Validators | 4 | `quality`, `security`, `bugs`, `user-story-acceptance` |
+| Portfolio | 1 | `personal` (default) |
+| Project | 1 | `general` (under `personal`) |
+
+Plus four validation gates that fire automatically when a work item enters `in_review`.
+
 ## Status
 
-Pre-alpha. Spec-driven via [OpenSpec](https://github.com/Fission-AI/OpenSpec).
-
-- **`initial-portfolio-manager`** — founding change, 11 capabilities, ships standalone
-- **`agentic-sdlc-framework-port`** — additive change that ports 19 agent personas, the 5-layer memory protocol, framework knowledge, planning artifacts, and quality systems from `~/agentic-sdlc/`
-
-See `openspec/changes/<change-id>/` for proposal, design, specs, and task lists.
+| Capability | State |
+|---|---|
+| Portfolio + project hierarchy with creation UI | ✅ |
+| Work-items API + Kanban board + item detail | ✅ |
+| Relationships graph + "Related" panel | ✅ |
+| Comments + `@-mentions` (with autocomplete) | ✅ |
+| HITL questions + `/inbox` | ✅ |
+| Discovery workflow (braindump → draft user stories) | ✅ |
+| Library with editor + publish to target repo | ✅ |
+| Cursor Automations API contract | ✅ |
+| **Validation pipeline gating done** | ✅ |
+| `pc` CLI (next, done, ship, comment, file, ask, validate) | ✅ |
+| Dashboard with 4 focused sections | ✅ |
+| Project-scoped routes (`/projects/<slug>/board`, etc.) | ✅ |
 
 ## Concept
 
@@ -23,77 +59,56 @@ Two-level hierarchy: **portfolios → projects → work items**. Each project bi
 
 ### 2. Library
 
-A managed library of Cursor rules, skills, automations, validators, and framework docs. Browse, edit, publish into any project's target repo. Treat agent behavior like reusable, versionable assets — not snippets scattered across repos.
+A managed library of Cursor rules, skills, automations, validators, and framework docs. Browse, edit, publish into any project's target repo. Agent behavior as a curated, versionable asset — not snippets scattered across repos.
 
 ### 3. Discovery + validation
 
-Discovery: dump unstructured thoughts; the system generates draft user stories with acceptance criteria, value/complexity scores, parallelization sketches — you review, edit, accept; accepted drafts become real work items wired up via the relationships graph.
+**Discovery:** dump unstructured thoughts; the system generates draft user stories with acceptance criteria, value/complexity scores, parallelization sketches. Review, edit, accept; accepted drafts become real work items wired up via the relationships graph.
 
-Validation: every work item must pass four configurable gates before `done` — **quality**, **security**, **bugs**, **user-story-acceptance**. Each gate is a sandboxed validator from the library. Override with a reason if you need to.
+**Validation:** every work item must pass four configurable gates before `done` — **quality**, **security**, **bugs**, **user-story-acceptance**. Each gate is a sandboxed validator from the library. Override with a reason if you need to (recorded with audit trail).
 
-## Architecture (planned)
+## Architecture
 
 ```
 sdlc-portfolio-manager/
 ├── apps/portfolio/       # Next.js (App Router) + SQLite (better-sqlite3 + Drizzle)
-├── packages/cli/         # `pc` CLI invoked by Cursor agents
-├── cursor-templates/     # Seed rules / skills / automations / validators
-│   ├── rules/
-│   ├── skills/
-│   ├── automations/
-│   └── validators/
-├── docs/                 # design-principles.md, getting-started, agent-protocol
+├── packages/cli/         # `pc` CLI invoked by Cursor agents (and humans)
+├── cursor-templates/     # Seeded library content
+│   ├── rules/            # agent-protocol, work-item-discipline
+│   ├── skills/           # (placeholder)
+│   ├── automations/      # weekly-security-review, weekly-bug-triage, discovery-default-pipeline
+│   └── validators/       # quality, security, bugs, user-story-acceptance
+├── docs/
+│   ├── getting-started.md       # ← start here
+│   ├── cursor-setup.md          # wire Cursor agents to talk to this
+│   └── design-principles.md     # UI rules (Jony Ive-influenced restraint)
 └── openspec/             # Spec-driven change history
 ```
 
 ## Design principles
 
-UI decisions follow eight principles in `docs/design-principles.md` — drawn from Jony Ive's restraint at Apple, the Linear / Notion / Things 3 product design school, and accessibility good practice. In one line each:
+Eight principles in [docs/design-principles.md](./docs/design-principles.md) — drawn from Jony Ive's restraint at Apple, the Linear / Notion / Things 3 product design school, and accessibility good practice:
 
-1. **Quiet by default** — restrained color, generous whitespace, type carries hierarchy
-2. **One canonical surface per concept** — no same-data-three-ways
-3. **Progressive disclosure** — essentials on first paint, depth on intent
-4. **Direct manipulation over modal dialogs** — drag, inline-edit, side panels
-5. **Keyboard-first** — every action reachable from the keyboard
-6. **Honest materials** — web conventions, not fake desktop chrome
-7. **Care in every empty state and every error** — empty states explain the next step
-8. **Consistency over novelty** — same widget for the same concept everywhere
+1. Quiet by default
+2. One canonical surface per concept
+3. Progressive disclosure
+4. Direct manipulation over modal dialogs
+5. Keyboard-first
+6. Honest materials
+7. Care in every empty state and every error
+8. Consistency over novelty
 
 ## Engineering principles
 
-- **Local-first** — SQLite, no network, no SaaS dependency
-- **Single-user now, multi-user later** — UUIDs, `user_id` and `project_id` scoping from day one; auth stubbed to `local-user`
-- **Cursor-native, not Cursor-only** — Rules, Skills, Automations, and Background Agents are first-class; clean REST + CLI surface allows other clients (Claude Code, raw API)
+- **Local-first** — SQLite at `~/.sdlc-portfolio-manager/data.sqlite`, no network, no SaaS dependency
+- **Single-user now, multi-user later** — UUIDs, `user_id` + `project_id` scoping from day one; auth stubbed to `local-user`
+- **Cursor-native, not Cursor-only** — Rules, Skills, Automations, and Background Agents are first-class; clean REST + CLI surface allows other clients
 - **OpenSpec-driven** — every change goes through proposal → design → specs → tasks → implement → archive
-- **Standalone shippable** — `initial-portfolio-manager` is self-contained; `agentic-sdlc-framework-port` is additive value, never a hard dependency
+- **Standalone shippable** — `initial-portfolio-manager` is self-contained; `agentic-sdlc-framework-port` (port of 19 personas + 5-layer memory + framework docs) is additive value, never a hard dependency
 
-## Getting started
+## Trust + security
 
-```bash
-pnpm install
-pnpm rebuild better-sqlite3   # one-time: builds the native SQLite binding
-pnpm dev                       # starts Next.js on http://localhost:3737
-```
-
-First request runs migrations and seeds the `personal` portfolio + `general` project automatically. Data lives at `~/.sdlc-portfolio-manager/data.sqlite` (override with `SDLC_DATA_DIR`).
-
-### Running tests
-
-```bash
-pnpm test         # vitest, one shot
-pnpm test:watch
-```
-
-### Current status
-
-| Section | State |
-|---------|-------|
-| 1. Monorepo + toolchain | ✅ |
-| 2. Database layer (schema, migrations, auth) | ✅ partial — foundational tables (portfolios, projects, work_items, comments, library_entries, relationships, \_migrations) |
-| 3. Portfolio + project hierarchy API | ✅ CRUD + first-run seed + health endpoint |
-| 4–21 | tracked in `openspec/changes/initial-portfolio-manager/tasks.md` |
-
-Implementation tracked task-by-task in `openspec/changes/initial-portfolio-manager/tasks.md`.
+The validation pipeline runs shell commands you (or other agents) define in validator entries. **Anyone who can edit your library can execute code on your machine** when validation fires. At MVP that's just you. If you ever expose the UI beyond your machine, disable validators or sandbox properly. See [docs/getting-started.md](./docs/getting-started.md#trust-model--read-before-turning-on-validators).
 
 ## License
 

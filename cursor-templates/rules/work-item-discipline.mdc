@@ -1,0 +1,47 @@
+---
+name: work-item-discipline
+description: Discourages TODO/FIXME scatter; routes follow-ups, bugs, and questions through the work-item store where the human can see them.
+globs: ["**/*.ts", "**/*.tsx", "**/*.js", "**/*.jsx", "**/*.py", "**/*.rb", "**/*.go", "**/*.rs", "**/*.java"]
+alwaysApply: false
+---
+
+# Work-item discipline
+
+TODO comments are where good intentions go to die. They never get a
+priority, never get scheduled, never get reviewed. Don't leave them.
+
+When you notice a problem, a follow-up, or a future cleanup, **file a work
+item** instead. The human (and other agents) can then triage, prioritize,
+schedule, or close it.
+
+## When to file something
+
+- **Found a bug while working on something else** — `pc file bug "<title>"`
+  with a short description piped in:
+  ```
+  echo "Login form accepts emails with leading whitespace, see src/auth.ts:42" | \
+    pc file bug "Login email validation accepts whitespace"
+  ```
+- **Saw tech debt you can't address right now** — file as a `task` with a
+  `tech-debt` label:
+  ```
+  pc file task "Refactor user export to streaming" --label tech-debt
+  ```
+- **You want to ask the human something but they're not around** — file
+  a question against the current work item (`pc ask`), not a TODO comment.
+- **You spotted a follow-up that should happen after the current change
+  lands** — file a `task` linked to the current item as parent.
+
+## What NOT to do
+
+- Don't write `// TODO: come back to this` anywhere.
+- Don't write `// FIXME` — file it as a `bug` instead.
+- Don't write `// XXX` — file it as a `bug` with a `security` or `tech-debt`
+  label if relevant.
+- Don't write `// HACK` — file the cleanup as a `task` with `tech-debt`.
+
+## Why
+
+Comments rot. The author forgets, leaves, deprecates the file. The work
+item store has owners, status, due dates, and a queue the human actually
+looks at. If something matters enough to mention, it matters enough to file.

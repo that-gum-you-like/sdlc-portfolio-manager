@@ -1,0 +1,70 @@
+---
+name: agent-protocol
+description: Core rule teaching a Cursor agent how to pick up work and report status through the local sdlc-portfolio-manager via the pc CLI.
+globs: ["**/*"]
+alwaysApply: true
+---
+
+# Agent protocol
+
+You are working inside a project tracked in `sdlc-portfolio-manager` (a local
+control plane that the human you're working for runs on this machine). The
+`pc` CLI is on your PATH and talks to the manager at `http://localhost:3737`
+by default. Use it.
+
+## The loop
+
+Every time you start a chunk of work, follow this protocol:
+
+1. **Claim work** — run `pc next` (optionally with `--type` / `--label`).
+   - If a `ready` item exists, the CLI prints `id`, `title`, `type`, status,
+     assignee, and description on stdout in `tab\separated` lines and exits 0.
+   - If nothing is ready, exit code is 2 — go back to the human or stop.
+2. **Work the item** — read the description, look at the parent if there is
+   one, check the acceptance criteria.
+3. **If you're stuck or need a decision** — file a HITL question:
+   ```
+   pc ask <item-id> "Should I use OAuth or magic links?" --addressed-to bryce
+   ```
+   The work item flips to `needs-human` automatically. Either:
+   - exit and come back later (`pc check-answer <q-id> <item-id>` from your
+     next session — exits 5 until answered), OR
+   - block with `pc ask <id> "…" --wait 600` to wait up to 10 minutes.
+4. **Record evidence as you go** — when you implement something that satisfies
+   an acceptance criterion, post evidence so the `user-story-acceptance`
+   validation gate matches it:
+   ```
+   pc comment <item-id> --kind evidence --criterion AC-1 \
+     "Implemented in src/foo.ts:42; covered by foo.test.ts"
+   ```
+5. **Move to in_review** — `pc done <item-id>`. This auto-triggers the four
+   validation gates (`quality`, `security`, `bugs`, `user-story-acceptance`).
+6. **Verify gates** — `pc validation-status <item-id>` to see results. Failing
+   gates need to be fixed before ship.
+7. **Ship** — `pc ship <item-id>`. The CLI exits 1 with a structured error if
+   any gate is still failing. Don't pass `--override-reason` unless the human
+   has explicitly approved it.
+
+## Discipline
+
+- **Never invent work.** If you find a bug or want to file a follow-up, use
+  `pc file bug "<short title>"` (description on stdin). Don't leave TODO
+  comments scattered in the code — they vanish.
+- **Use the structure.** When you have a chunky problem, file an `epic` with
+  child `story` items. Use `--parent <epic-id>` when filing children.
+- **Respect needs-human.** If you flip an item to `needs-human` via a
+  question, don't claim other work on that item until the question resolves.
+- **Don't override gates silently.** `pc ship --override-reason "…"` is a
+  break-glass for the human, not for agents.
+
+## Config
+
+- `PC_API_URL` — default `http://localhost:3737`
+- `PC_AGENT` — your agent name (default `cursor-bg`). Set this so the human
+  can see who's working what.
+- `PC_PROJECT` — the project slug for this repo. The human should set this
+  once per project. If unset, `pc` falls back to repo-path lookup.
+
+If `pc` ever returns a 404 like "no project with slug X", the human needs to
+either set `PC_PROJECT` or bind the project's `target_repo_path` to this
+folder via the web UI's Project → Settings page.

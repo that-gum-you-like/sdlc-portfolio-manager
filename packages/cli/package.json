@@ -8,7 +8,8 @@
   },
   "scripts": {
     "cli": "tsx src/index.ts",
-    "build": "tsc",
+    "build": "tsc && chmod +x dist/index.js",
+    "prepare": "tsc && chmod +x dist/index.js",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
