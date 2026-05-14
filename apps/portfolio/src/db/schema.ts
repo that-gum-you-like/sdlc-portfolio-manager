@@ -140,6 +140,43 @@ export const relationships = sqliteTable(
   }),
 );
 
+export const mentions = sqliteTable('mentions', {
+  id: id(),
+  userId: userId(),
+  sourceType: text('source_type', { enum: ['comment', 'question'] }).notNull(),
+  sourceId: text('source_id').notNull(),
+  workItemId: text('work_item_id').references(() => workItems.id, { onDelete: 'cascade' }),
+  mentionedHandle: text('mentioned_handle').notNull(),
+  resolvedUserId: text('resolved_user_id'),
+  resolvedAgentName: text('resolved_agent_name'),
+  createdAt: createdAt(),
+});
+
+export const notifications = sqliteTable('notifications', {
+  id: id(),
+  userId: userId(),
+  recipient: text('recipient').notNull(),
+  kind: text('kind', { enum: ['mention', 'question', 'answer'] }).notNull(),
+  sourceId: text('source_id').notNull(),
+  workItemId: text('work_item_id').references(() => workItems.id, { onDelete: 'cascade' }),
+  createdAt: createdAt(),
+  readAt: text('read_at'),
+});
+
+export const evidenceLinks = sqliteTable('evidence_links', {
+  id: id(),
+  userId: userId(),
+  commentId: text('comment_id')
+    .notNull()
+    .references(() => comments.id, { onDelete: 'cascade' }),
+  acceptanceCriterionId: text('acceptance_criterion_id').notNull(),
+  criterionTextSnapshot: text('criterion_text_snapshot'),
+  workItemId: text('work_item_id')
+    .notNull()
+    .references(() => workItems.id, { onDelete: 'cascade' }),
+  createdAt: createdAt(),
+});
+
 export const migrations = sqliteTable('_migrations', {
   id: integer('id').primaryKey({ autoIncrement: true }),
   name: text('name').notNull().unique(),
@@ -156,3 +193,6 @@ export type Comment = typeof comments.$inferSelect;
 export type NewComment = typeof comments.$inferInsert;
 export type LibraryEntry = typeof libraryEntries.$inferSelect;
 export type Relationship = typeof relationships.$inferSelect;
+export type Mention = typeof mentions.$inferSelect;
+export type Notification = typeof notifications.$inferSelect;
+export type EvidenceLink = typeof evidenceLinks.$inferSelect;

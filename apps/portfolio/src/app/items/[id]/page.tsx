@@ -8,6 +8,8 @@ import { getDb } from '@/db';
 import { portfolios, projects, workItems } from '@/db/schema';
 import type { WorkItemStatus } from '@/lib/work-items';
 import { TopNav } from '@/components/top-nav';
+import { RelatedPanel } from '@/components/related-panel';
+import { CommentsThread } from '@/components/comments-thread';
 import { StatusControl } from './status-control';
 
 export const dynamic = 'force-dynamic';
@@ -182,11 +184,14 @@ export default async function ItemDetailPage({ params }: Params) {
               <code style={{ fontSize: 11 }}>{item.id.slice(0, 8)}</code>
             </dd>
           </dl>
+          <RelatedPanel entityType="work_item" entityId={item.id} />
         </aside>
       </div>
 
+      <CommentsThread workItemId={item.id} />
+
       <p className="muted" style={{ marginTop: 48, fontSize: 13 }}>
-        Comments, validation panel, relationships, and questions arrive in upcoming sections — see{' '}
+        Validation panel and pending-questions thread arrive in upcoming sections — see{' '}
         <code>openspec/changes/initial-portfolio-manager/tasks.md</code>.
       </p>
     </main>
