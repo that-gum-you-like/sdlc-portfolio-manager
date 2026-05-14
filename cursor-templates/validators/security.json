@@ -1,0 +1,12 @@
+{
+  "name": "Security gate (placeholder)",
+  "description": "Stub that returns pass. Replace the command with your real security scanner (npm audit, semgrep, gitleaks, etc.) or invoke the security-review Cursor skill.",
+  "type": "validator",
+  "frontmatter": {
+    "gate": "security",
+    "command": "echo 'Security scan placeholder — replace with semgrep / gitleaks / npm audit invocation' && exit 0",
+    "pass_exit_codes": [0],
+    "output_parser": "none",
+    "timeout_seconds": 600
+  }
+}

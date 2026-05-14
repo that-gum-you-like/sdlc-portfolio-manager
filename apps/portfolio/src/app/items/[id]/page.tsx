@@ -11,6 +11,7 @@ import { TopNav } from '@/components/top-nav';
 import { RelatedPanel } from '@/components/related-panel';
 import { CommentsThread } from '@/components/comments-thread';
 import { PendingQuestions } from '@/components/pending-questions';
+import { ValidationPanel } from '@/components/validation-panel';
 import { StatusControl } from './status-control';
 
 export const dynamic = 'force-dynamic';
@@ -189,6 +190,7 @@ export default async function ItemDetailPage({ params }: Params) {
         </aside>
       </div>
 
+      <ValidationPanel workItemId={item.id} />
       <PendingQuestions workItemId={item.id} />
       <CommentsThread workItemId={item.id} />
 

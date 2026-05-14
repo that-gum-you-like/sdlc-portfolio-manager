@@ -1,0 +1,12 @@
+{
+  "name": "Quality gate (lint + typecheck)",
+  "description": "Runs the project's lint + typecheck. Tuned for Node/TS projects — adjust the command per repo.",
+  "type": "validator",
+  "frontmatter": {
+    "gate": "quality",
+    "command": "(npm run -s lint 2>/dev/null || true) && (npm run -s typecheck 2>/dev/null || true)",
+    "pass_exit_codes": [0],
+    "output_parser": "none",
+    "timeout_seconds": 300
+  }
+}

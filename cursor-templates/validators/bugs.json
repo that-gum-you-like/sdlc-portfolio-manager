@@ -1,0 +1,12 @@
+{
+  "name": "Bugs gate (tests pass)",
+  "description": "Runs the project's test suite. Defaults to npm test; adjust per repo. Output parser will switch to junit-xml when the runner gains structured-output support.",
+  "type": "validator",
+  "frontmatter": {
+    "gate": "bugs",
+    "command": "npm test --silent 2>&1 || npm test 2>&1",
+    "pass_exit_codes": [0],
+    "output_parser": "none",
+    "timeout_seconds": 900
+  }
+}

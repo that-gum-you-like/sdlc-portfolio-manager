@@ -1,0 +1,12 @@
+{
+  "name": "User-story acceptance",
+  "description": "Built-in matcher. Walks the work item's acceptance criteria and confirms each is linked to at least one evidence comment (kind=evidence). Pipes test-name keyword matching in once the runner consumes junit-xml output.",
+  "type": "validator",
+  "frontmatter": {
+    "gate": "user-story-acceptance",
+    "command": "@builtin:user-story-acceptance",
+    "pass_exit_codes": [0],
+    "output_parser": "none",
+    "timeout_seconds": 60
+  }
+}

@@ -84,6 +84,7 @@ export const PatchWorkItemBody = z.object({
   acceptanceCriteria: z.array(AcceptanceCriterion).optional(),
   subtypeData: z.record(z.unknown()).optional(),
   rank: z.number().int().optional(),
+  overrideReason: z.string().min(1).max(1000).optional(),
 });
 export type PatchWorkItemBody = z.infer<typeof PatchWorkItemBody>;
 

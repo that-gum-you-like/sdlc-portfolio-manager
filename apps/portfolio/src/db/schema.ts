@@ -261,6 +261,50 @@ export const discoveryDrafts = sqliteTable('discovery_drafts', {
   updatedAt: updatedAt(),
 });
 
+export const validationRuns = sqliteTable('validation_runs', {
+  id: id(),
+  userId: userId(),
+  projectId: text('project_id').references(() => projects.id, { onDelete: 'cascade' }),
+  workItemId: text('work_item_id')
+    .notNull()
+    .references(() => workItems.id, { onDelete: 'cascade' }),
+  gate: text('gate', {
+    enum: ['quality', 'security', 'bugs', 'user-story-acceptance'],
+  }).notNull(),
+  validatorSlug: text('validator_slug').notNull(),
+  startedAt: text('started_at')
+    .notNull()
+    .$defaultFn(() => new Date().toISOString()),
+  completedAt: text('completed_at'),
+  status: text('status', {
+    enum: ['running', 'pass', 'fail', 'error', 'skipped'],
+  })
+    .notNull()
+    .default('running'),
+  exitCode: integer('exit_code'),
+  stdoutSnippet: text('stdout_snippet'),
+  stderrSnippet: text('stderr_snippet'),
+  findingsJson: text('findings_json')
+    .notNull()
+    .default(sql`'{}'`),
+});
+
+export const overrides = sqliteTable('overrides', {
+  id: id(),
+  userId: userId(),
+  workItemId: text('work_item_id')
+    .notNull()
+    .references(() => workItems.id, { onDelete: 'cascade' }),
+  failingGatesJson: text('failing_gates_json')
+    .notNull()
+    .default(sql`'[]'`),
+  reason: text('reason').notNull(),
+  submittedBy: text('submitted_by').notNull(),
+  submittedAt: text('submitted_at')
+    .notNull()
+    .$defaultFn(() => new Date().toISOString()),
+});
+
 export const publishHistory = sqliteTable('publish_history', {
   id: id(),
   userId: userId(),
@@ -325,3 +369,7 @@ export type DiscoveryDraft = typeof discoveryDrafts.$inferSelect;
 export type NewDiscoveryDraft = typeof discoveryDrafts.$inferInsert;
 export type PublishHistoryRow = typeof publishHistory.$inferSelect;
 export type NewPublishHistoryRow = typeof publishHistory.$inferInsert;
+export type ValidationRun = typeof validationRuns.$inferSelect;
+export type NewValidationRun = typeof validationRuns.$inferInsert;
+export type OverrideRow = typeof overrides.$inferSelect;
+export type NewOverrideRow = typeof overrides.$inferInsert;

@@ -11,7 +11,14 @@ import {
   type WorkItemStatus,
 } from '@/lib/work-items';
 import { getDb } from '@/db';
-import { workItems, type WorkItem } from '@/db/schema';
+import { overrides, workItems, type WorkItem } from '@/db/schema';
+import {
+  enabledGatesForProject,
+  failingGates,
+  latestGateStates,
+  runAllGates,
+} from '@/lib/validation-orchestrator';
+import { projects } from '@/db/schema';
 
 export const dynamic = 'force-dynamic';
 
@@ -145,6 +152,43 @@ export async function PATCH(request: Request, { params }: Params) {
         },
       );
     }
+
+    // Done-transition gate: refuse in_review → done unless all enabled
+    // validation gates have most-recent status pass or skipped. Override
+    // path: caller submits override_reason and the transition proceeds
+    // with a recorded overrides row.
+    if (existing.status === 'in_review' && body.status === 'done') {
+      const states = latestGateStates(existing.id);
+      const project = getDb()
+        .select()
+        .from(projects)
+        .where(and(eq(projects.id, existing.projectId), eq(projects.userId, currentUserId())))
+        .get();
+      const enabled = enabledGatesForProject(project?.settingsJson ?? '{}');
+      const stillFailing = failingGates(states.filter((s) => enabled.includes(s.gate)));
+      if (stillFailing.length > 0) {
+        const overrideReason = body.overrideReason?.trim();
+        if (!overrideReason) {
+          return apiError(
+            'validation_gates_failing',
+            `Cannot mark done — ${stillFailing.length} gate(s) failing: ${stillFailing.join(', ')}. Pass override_reason to proceed anyway.`,
+            400,
+            { failingGates: stillFailing, states },
+          );
+        }
+        getDb()
+          .insert(overrides)
+          .values({
+            userId: currentUserId(),
+            workItemId: existing.id,
+            failingGatesJson: JSON.stringify(stillFailing),
+            reason: overrideReason,
+            submittedBy: currentUserId(),
+          })
+          .run();
+      }
+    }
+
     updates.status = body.status;
     // Track previous_status when entering needs-human (HITL spec)
     if (body.status === 'needs-human') {
@@ -159,6 +203,22 @@ export async function PATCH(request: Request, { params }: Params) {
     .where(eq(workItems.id, id))
     .returning()
     .all();
+
+  // Auto-trigger validation on in_progress → in_review. Don't block the
+  // response — kick off runs async and let the UI poll. Errors are swallowed
+  // and recorded in validation_runs rows.
+  if (
+    updated &&
+    existing.status === 'in_progress' &&
+    body.status === 'in_review'
+  ) {
+    runAllGates(updated.id).catch((err: unknown) => {
+      // Swallow — failures are recorded as 'error' status on the rows themselves.
+      // Only console.error here; the API has already responded.
+      console.error('[validation auto-trigger] failed', err);
+    });
+  }
+
   return NextResponse.json({ workItem: updated });
 }
 

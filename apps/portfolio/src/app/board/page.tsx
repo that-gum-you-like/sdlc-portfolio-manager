@@ -7,6 +7,7 @@ import { getDb } from '@/db';
 import { projects, workItems, type WorkItem } from '@/db/schema';
 import { BOARD_COLUMN_ORDER, type WorkItemStatus } from '@/lib/work-items';
 import { TopNav } from '@/components/top-nav';
+import { ValidationDots } from '@/components/validation-panel';
 import { NewItemForm } from './new-item-form';
 
 export const dynamic = 'force-dynamic';
@@ -28,6 +29,7 @@ function BoardCard({ item }: { item: WorkItem }) {
       <div className="board-card-meta">
         <span className="type-pill">{item.type}</span>
         {item.assignee ? <span>{item.assignee}</span> : null}
+        <ValidationDots workItemId={item.id} />
       </div>
     </Link>
   );
