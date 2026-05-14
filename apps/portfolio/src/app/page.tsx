@@ -5,6 +5,7 @@ import { ensureInitialized } from '@/lib/init';
 import { currentUserId } from '@/lib/auth';
 import { getDb } from '@/db';
 import { portfolios, projects, workItems } from '@/db/schema';
+import { TopNav } from '@/components/top-nav';
 
 export const dynamic = 'force-dynamic';
 
@@ -19,6 +20,7 @@ export default async function HomePage() {
 
   return (
     <main>
+      <TopNav active="home" />
       <h1>sdlc-portfolio-manager</h1>
       <p className="muted">
         Local portfolio + work-item + library manager. Pre-alpha — see{' '}

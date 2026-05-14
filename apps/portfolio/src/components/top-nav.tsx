@@ -1,0 +1,30 @@
+import Link from 'next/link';
+
+interface TopNavProps {
+  active?: 'home' | 'board' | 'backlog' | 'library' | 'discoveries' | 'inbox';
+}
+
+export function TopNav({ active }: TopNavProps) {
+  return (
+    <nav className="top-nav">
+      <Link href="/" className={['brand', active === 'home' ? 'active' : ''].join(' ')}>
+        sdlc-portfolio-manager
+      </Link>
+      <Link href="/board" className={active === 'board' ? 'active' : ''}>
+        Board
+      </Link>
+      <Link href="/backlog" className={active === 'backlog' ? 'active' : ''}>
+        Backlog
+      </Link>
+      <Link href="/library" className={active === 'library' ? 'active' : ''}>
+        Library
+      </Link>
+      <Link href="/discoveries" className={active === 'discoveries' ? 'active' : ''}>
+        Discoveries
+      </Link>
+      <Link href="/inbox" className={active === 'inbox' ? 'active' : ''}>
+        Inbox
+      </Link>
+    </nav>
+  );
+}
