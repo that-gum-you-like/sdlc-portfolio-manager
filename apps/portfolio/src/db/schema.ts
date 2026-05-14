@@ -340,6 +340,22 @@ export const automationRuns = sqliteTable('automation_runs', {
     .default(sql`'[]'`),
 });
 
+export const workItemStatusChanges = sqliteTable('work_item_status_changes', {
+  id: id(),
+  userId: userId(),
+  projectId: text('project_id').references(() => projects.id, { onDelete: 'cascade' }),
+  workItemId: text('work_item_id')
+    .notNull()
+    .references(() => workItems.id, { onDelete: 'cascade' }),
+  fromStatus: text('from_status'),
+  toStatus: text('to_status').notNull(),
+  changedBy: text('changed_by'),
+  overrideId: text('override_id'),
+  changedAt: text('changed_at')
+    .notNull()
+    .$defaultFn(() => new Date().toISOString()),
+});
+
 export const migrations = sqliteTable('_migrations', {
   id: integer('id').primaryKey({ autoIncrement: true }),
   name: text('name').notNull().unique(),
@@ -373,3 +389,5 @@ export type ValidationRun = typeof validationRuns.$inferSelect;
 export type NewValidationRun = typeof validationRuns.$inferInsert;
 export type OverrideRow = typeof overrides.$inferSelect;
 export type NewOverrideRow = typeof overrides.$inferInsert;
+export type WorkItemStatusChange = typeof workItemStatusChanges.$inferSelect;
+export type NewWorkItemStatusChange = typeof workItemStatusChanges.$inferInsert;

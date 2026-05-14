@@ -5,7 +5,7 @@ import { ensureInitialized } from '@/lib/init';
 import { apiError } from '@/lib/api';
 import { currentUserId } from '@/lib/auth';
 import { getDb, getRawDb } from '@/db';
-import { projects, workItems } from '@/db/schema';
+import { projects, workItems, workItemStatusChanges } from '@/db/schema';
 import { WORK_ITEM_TYPES, type WorkItemType } from '@/lib/work-items';
 
 export const dynamic = 'force-dynamic';
@@ -107,6 +107,18 @@ export async function GET(request: Request) {
       .where(and(eq(workItems.id, target.id), eq(workItems.status, 'ready' as const)))
       .returning()
       .all();
+    if (updated) {
+      db.insert(workItemStatusChanges)
+        .values({
+          userId,
+          projectId: updated.projectId,
+          workItemId: updated.id,
+          fromStatus: 'ready',
+          toStatus: 'in_progress',
+          changedBy: agent,
+        })
+        .run();
+    }
     return updated ?? null;
   });
   const claimed = tx();

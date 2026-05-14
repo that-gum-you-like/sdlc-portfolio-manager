@@ -11,7 +11,7 @@ import {
   type WorkItemStatus,
 } from '@/lib/work-items';
 import { getDb } from '@/db';
-import { overrides, workItems, type WorkItem } from '@/db/schema';
+import { overrides, workItems, workItemStatusChanges, type WorkItem } from '@/db/schema';
 import {
   enabledGatesForProject,
   failingGates,
@@ -157,6 +157,7 @@ export async function PATCH(request: Request, { params }: Params) {
     // validation gates have most-recent status pass or skipped. Override
     // path: caller submits override_reason and the transition proceeds
     // with a recorded overrides row.
+    let overrideId: string | null = null;
     if (existing.status === 'in_review' && body.status === 'done') {
       const states = latestGateStates(existing.id);
       const project = getDb()
@@ -176,7 +177,7 @@ export async function PATCH(request: Request, { params }: Params) {
             { failingGates: stillFailing, states },
           );
         }
-        getDb()
+        const [override] = getDb()
           .insert(overrides)
           .values({
             userId: currentUserId(),
@@ -185,7 +186,9 @@ export async function PATCH(request: Request, { params }: Params) {
             reason: overrideReason,
             submittedBy: currentUserId(),
           })
-          .run();
+          .returning()
+          .all();
+        overrideId = override?.id ?? null;
       }
     }
 
@@ -194,15 +197,38 @@ export async function PATCH(request: Request, { params }: Params) {
     if (body.status === 'needs-human') {
       updates.previousStatus = existing.status;
     }
+    // Stash the transition info so we can record it after the update commits.
+    (updates as { _statusChange?: unknown })._statusChange = {
+      from: existing.status,
+      to: body.status,
+      overrideId,
+    };
   }
 
   const db = getDb();
+  const statusChange = (updates as { _statusChange?: { from: string; to: string; overrideId: string | null } })._statusChange;
+  delete (updates as { _statusChange?: unknown })._statusChange;
   const [updated] = db
     .update(workItems)
     .set(updates)
     .where(eq(workItems.id, id))
     .returning()
     .all();
+
+  // Record the status transition for the trajectory timeline.
+  if (statusChange && updated) {
+    db.insert(workItemStatusChanges)
+      .values({
+        userId: currentUserId(),
+        projectId: updated.projectId,
+        workItemId: updated.id,
+        fromStatus: statusChange.from,
+        toStatus: statusChange.to,
+        changedBy: currentUserId(),
+        overrideId: statusChange.overrideId,
+      })
+      .run();
+  }
 
   // Auto-trigger validation on in_progress → in_review. Don't block the
   // response — kick off runs async and let the UI poll. Errors are swallowed

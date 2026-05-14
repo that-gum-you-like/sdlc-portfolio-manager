@@ -6,7 +6,7 @@ import { ensureInitialized } from '@/lib/init';
 import { apiError, parseJson } from '@/lib/api';
 import { currentUserId } from '@/lib/auth';
 import { getDb, getRawDb } from '@/db';
-import { mentions, notifications, questions, workItems } from '@/db/schema';
+import { mentions, notifications, questions, workItems, workItemStatusChanges } from '@/db/schema';
 import { buildMentionRecords, parseMentions } from '@/lib/mentions';
 
 export const dynamic = 'force-dynamic';
@@ -86,6 +86,16 @@ export async function POST(request: Request, { params }: Params) {
           updatedAt: new Date().toISOString(),
         })
         .where(eq(workItems.id, item.id))
+        .run();
+      db.insert(workItemStatusChanges)
+        .values({
+          userId,
+          projectId: item.projectId,
+          workItemId: item.id,
+          fromStatus: item.status,
+          toStatus: 'needs-human',
+          changedBy: parsed.data.askedBy,
+        })
         .run();
     }
 

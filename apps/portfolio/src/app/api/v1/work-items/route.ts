@@ -11,7 +11,7 @@ import {
   validateSubtypeOnCreate,
 } from '@/lib/work-items';
 import { getDb } from '@/db';
-import { projects, workItems } from '@/db/schema';
+import { projects, workItems, workItemStatusChanges } from '@/db/schema';
 
 export const dynamic = 'force-dynamic';
 
@@ -131,6 +131,19 @@ export async function POST(request: Request) {
     })
     .returning()
     .all();
+
+  if (created) {
+    db.insert(workItemStatusChanges)
+      .values({
+        userId,
+        projectId: created.projectId,
+        workItemId: created.id,
+        fromStatus: null,
+        toStatus: created.status,
+        changedBy: userId,
+      })
+      .run();
+  }
 
   return NextResponse.json({ workItem: created }, { status: 201 });
 }

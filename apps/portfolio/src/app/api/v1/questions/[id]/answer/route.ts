@@ -12,6 +12,7 @@ import {
   notifications,
   questions,
   workItems,
+  workItemStatusChanges,
 } from '@/db/schema';
 import { buildMentionRecords, parseMentions } from '@/lib/mentions';
 import { allowedNextStatuses, isTransitionAllowed, type WorkItemStatus } from '@/lib/work-items';
@@ -145,6 +146,16 @@ export async function POST(request: Request, { params }: Params) {
       db.update(workItems)
         .set({ status: safeTarget, previousStatus: null, updatedAt: now })
         .where(eq(workItems.id, item.id))
+        .run();
+      db.insert(workItemStatusChanges)
+        .values({
+          userId,
+          projectId: item.projectId,
+          workItemId: item.id,
+          fromStatus: 'needs-human',
+          toStatus: safeTarget,
+          changedBy: parsed.data.author,
+        })
         .run();
       workItemUpdate = { restored: true, to: safeTarget };
     }

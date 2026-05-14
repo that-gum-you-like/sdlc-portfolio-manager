@@ -6,7 +6,7 @@ import { apiError, parseJson } from '@/lib/api';
 import { currentUserId } from '@/lib/auth';
 import { ClaimBody } from '@/lib/work-items';
 import { getDb, getRawDb } from '@/db';
-import { workItems } from '@/db/schema';
+import { workItems, workItemStatusChanges } from '@/db/schema';
 
 export const dynamic = 'force-dynamic';
 
@@ -48,6 +48,16 @@ export async function POST(request: Request, { params }: Params) {
       .returning()
       .all();
     if (!updated) return { kind: 'conflict' as const, current: 'unknown' };
+    db.insert(workItemStatusChanges)
+      .values({
+        userId,
+        projectId: updated.projectId,
+        workItemId: updated.id,
+        fromStatus: 'ready',
+        toStatus: 'in_progress',
+        changedBy: parsed.data.agent,
+      })
+      .run();
     return { kind: 'ok' as const, item: updated };
   });
 

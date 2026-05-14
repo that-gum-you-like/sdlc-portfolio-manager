@@ -12,6 +12,7 @@ import { RelatedPanel } from '@/components/related-panel';
 import { CommentsThread } from '@/components/comments-thread';
 import { PendingQuestions } from '@/components/pending-questions';
 import { ValidationPanel } from '@/components/validation-panel';
+import { TrajectoryPanel } from '@/components/trajectory-panel';
 import { StatusControl } from './status-control';
 
 export const dynamic = 'force-dynamic';
@@ -197,13 +198,9 @@ export default async function ItemDetailPage({ params }: Params) {
       </div>
 
       <ValidationPanel workItemId={item.id} />
+      <TrajectoryPanel workItemId={item.id} />
       <PendingQuestions workItemId={item.id} />
       <CommentsThread workItemId={item.id} />
-
-      <p className="muted" style={{ marginTop: 48, fontSize: 13 }}>
-        Validation panel and pending-questions thread arrive in upcoming sections — see{' '}
-        <code>openspec/changes/initial-portfolio-manager/tasks.md</code>.
-      </p>
     </main>
   );
 }
