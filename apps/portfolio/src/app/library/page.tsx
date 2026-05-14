@@ -49,6 +49,12 @@ export default async function LibraryPage({ searchParams }: Search) {
         publishable into any of your projects&apos; target repos.
       </p>
 
+      <p>
+        <Link href="/library/new" className="primary-link">
+          + New entry
+        </Link>
+      </p>
+
       <nav className="library-filter">
         <Link href="/library" className={typeFilter === null ? 'active' : ''}>
           All
