@@ -13,7 +13,13 @@ import matter from 'gray-matter';
 
 import { dataDir } from '@/db/paths';
 
-export type LibraryEntryType = 'rule' | 'skill' | 'automation' | 'validator' | 'doc';
+export type LibraryEntryType =
+  | 'rule'
+  | 'skill'
+  | 'automation'
+  | 'validator'
+  | 'doc'
+  | 'guardrail';
 
 export const LIBRARY_TYPES: LibraryEntryType[] = [
   'rule',
@@ -21,6 +27,7 @@ export const LIBRARY_TYPES: LibraryEntryType[] = [
   'automation',
   'validator',
   'doc',
+  'guardrail',
 ];
 
 export const DIR_FOR_TYPE: Record<LibraryEntryType, string> = {
@@ -29,6 +36,7 @@ export const DIR_FOR_TYPE: Record<LibraryEntryType, string> = {
   automation: 'automations',
   validator: 'validators',
   doc: 'docs',
+  guardrail: 'guardrails',
 };
 
 export const TARGET_REPO_DIR: Record<LibraryEntryType, string> = {
@@ -37,6 +45,7 @@ export const TARGET_REPO_DIR: Record<LibraryEntryType, string> = {
   automation: '.cursor/automations',
   validator: '.cursor/validators',
   doc: '.cursor/framework',
+  guardrail: '.cursor/guardrails',
 };
 
 export const EXT_FOR_TYPE: Record<LibraryEntryType, string> = {
@@ -45,6 +54,7 @@ export const EXT_FOR_TYPE: Record<LibraryEntryType, string> = {
   automation: '.json',
   validator: '.json',
   doc: '.md',
+  guardrail: '.json',
 };
 
 export interface LibraryEntry {
@@ -419,6 +429,24 @@ Framework knowledge content here.
   }
   if (type === 'skill') {
     throw new Error('skill editor not supported in this pass');
+  }
+  if (type === 'guardrail') {
+    return JSON.stringify(
+      {
+        name,
+        description: '',
+        type: 'guardrail',
+        frontmatter: {
+          kind: 'custom',
+          scope: 'per-agent',
+          action_patterns: ['*'],
+          verdict_on_breach: 'warn',
+          message: 'Custom guardrail breached',
+        },
+      },
+      null,
+      2,
+    );
   }
   // exhaustiveness check
   const _exhaustive: never = type;

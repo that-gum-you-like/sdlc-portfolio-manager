@@ -1,0 +1,13 @@
+{
+  "name": "Rate limit per agent",
+  "description": "Caps how many actions a single agent can take per hour. Soft default to keep runaway loops from filling the work-item store.",
+  "type": "guardrail",
+  "frontmatter": {
+    "kind": "rate-limit",
+    "scope": "per-agent",
+    "action_patterns": ["file", "comment", "ask"],
+    "limit_per_hour": 60,
+    "verdict_on_breach": "block",
+    "message": "Agent {agent} has performed {count} actions in the last hour (limit: {limit}). Take a break or get human approval to continue."
+  }
+}

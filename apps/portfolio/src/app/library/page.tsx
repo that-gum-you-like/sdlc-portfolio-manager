@@ -16,6 +16,7 @@ const TYPE_LABEL: Record<LibraryEntryType, string> = {
   automation: 'Automations',
   validator: 'Validators',
   doc: 'Docs',
+  guardrail: 'Guardrails',
 };
 
 const TYPE_DESCRIPTION: Record<LibraryEntryType, string> = {
@@ -24,6 +25,7 @@ const TYPE_DESCRIPTION: Record<LibraryEntryType, string> = {
   automation: 'Scheduled prompts that Cursor Automations execute on a cron.',
   validator: 'Sandboxed commands that gate the done transition (quality, security, bugs, etc.).',
   doc: 'Framework knowledge — maturity model, testing tiers, validation layers.',
+  guardrail: 'Pre-action policy gates (rate-limit, forbidden-paths, evidence-required, etc.).',
 };
 
 export default async function LibraryPage({ searchParams }: Search) {

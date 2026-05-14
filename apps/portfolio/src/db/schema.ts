@@ -50,7 +50,7 @@ export const libraryEntries = sqliteTable('library_entries', {
   userId: userId(),
   projectId: text('project_id').references(() => projects.id, { onDelete: 'cascade' }),
   type: text('type', {
-    enum: ['rule', 'skill', 'automation', 'validator', 'doc'],
+    enum: ['rule', 'skill', 'automation', 'validator', 'doc', 'guardrail'],
   }).notNull(),
   slug: text('slug').notNull(),
   name: text('name').notNull(),
@@ -310,7 +310,7 @@ export const publishHistory = sqliteTable('publish_history', {
   userId: userId(),
   projectId: text('project_id').references(() => projects.id, { onDelete: 'set null' }),
   entryType: text('entry_type', {
-    enum: ['rule', 'skill', 'automation', 'validator', 'doc'],
+    enum: ['rule', 'skill', 'automation', 'validator', 'doc', 'guardrail'],
   }).notNull(),
   entrySlug: text('entry_slug').notNull(),
   targetRepoPath: text('target_repo_path').notNull(),
@@ -338,6 +338,42 @@ export const automationRuns = sqliteTable('automation_runs', {
   createdItemIdsJson: text('created_item_ids_json')
     .notNull()
     .default(sql`'[]'`),
+});
+
+export const guardrailRuns = sqliteTable('guardrail_runs', {
+  id: id(),
+  userId: userId(),
+  projectId: text('project_id').references(() => projects.id, { onDelete: 'cascade' }),
+  workItemId: text('work_item_id').references(() => workItems.id, { onDelete: 'cascade' }),
+  guardrailSlug: text('guardrail_slug').notNull(),
+  action: text('action').notNull(),
+  agentName: text('agent_name'),
+  verdict: text('verdict', { enum: ['allow', 'warn', 'block'] }).notNull(),
+  reason: text('reason'),
+  evaluatedAt: text('evaluated_at')
+    .notNull()
+    .$defaultFn(() => new Date().toISOString()),
+});
+
+export const agentSessions = sqliteTable('agent_sessions', {
+  id: id(),
+  userId: userId(),
+  projectId: text('project_id').references(() => projects.id, { onDelete: 'cascade' }),
+  agentName: text('agent_name').notNull(),
+  workItemId: text('work_item_id').references(() => workItems.id, { onDelete: 'cascade' }),
+  startedAt: text('started_at')
+    .notNull()
+    .$defaultFn(() => new Date().toISOString()),
+  lastHeartbeatAt: text('last_heartbeat_at')
+    .notNull()
+    .$defaultFn(() => new Date().toISOString()),
+  completedAt: text('completed_at'),
+  status: text('status', { enum: ['active', 'completed', 'crashed', 'cancelled'] })
+    .notNull()
+    .default('active'),
+  stateBlob: text('state_blob')
+    .notNull()
+    .default(sql`'{}'`),
 });
 
 export const handoffs = sqliteTable('handoffs', {
@@ -431,3 +467,7 @@ export type WorkItemLink = typeof workItemLinks.$inferSelect;
 export type NewWorkItemLink = typeof workItemLinks.$inferInsert;
 export type Handoff = typeof handoffs.$inferSelect;
 export type NewHandoff = typeof handoffs.$inferInsert;
+export type AgentSession = typeof agentSessions.$inferSelect;
+export type NewAgentSession = typeof agentSessions.$inferInsert;
+export type GuardrailRun = typeof guardrailRuns.$inferSelect;
+export type NewGuardrailRun = typeof guardrailRuns.$inferInsert;

@@ -1,0 +1,13 @@
+{
+  "name": "Evidence required before ship",
+  "description": "Warns when an agent attempts pc ship without having posted at least one evidence comment in the last 24h on this work item. Designed to push agents to record what they did.",
+  "type": "guardrail",
+  "frontmatter": {
+    "kind": "evidence-required",
+    "scope": "per-work-item",
+    "action_patterns": ["ship"],
+    "lookback_hours": 24,
+    "verdict_on_breach": "warn",
+    "message": "No evidence comments in the last {lookback_hours}h on this item. Post evidence with: pc comment <id> --kind evidence --criterion AC-N \"...\""
+  }
+}

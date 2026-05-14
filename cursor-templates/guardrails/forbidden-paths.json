@@ -1,0 +1,20 @@
+{
+  "name": "Forbidden file paths",
+  "description": "Blocks file-modifying actions that touch sensitive paths (.env, secrets, credentials). Hint, not enforcement — file-system access happens in the agent's sandbox, not here. This guardrail flags it in the trajectory so reviewers spot it.",
+  "type": "guardrail",
+  "frontmatter": {
+    "kind": "forbidden-paths",
+    "scope": "per-project",
+    "action_patterns": ["link", "comment"],
+    "path_globs": [
+      "**/.env",
+      "**/.env.*",
+      "**/secrets/**",
+      "**/credentials*",
+      "**/*.pem",
+      "**/*.key"
+    ],
+    "verdict_on_breach": "warn",
+    "message": "Action references a sensitive path: {path}. Review before approving."
+  }
+}

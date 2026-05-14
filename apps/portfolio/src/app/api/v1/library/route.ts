@@ -29,7 +29,7 @@ export async function GET(request: Request) {
 }
 
 const CreateBody = z.object({
-  type: z.enum(['rule', 'automation', 'validator', 'doc']),
+  type: z.enum(['rule', 'automation', 'validator', 'doc', 'guardrail']),
   name: z.string().min(1).max(120),
   slug: z.string().min(1).max(64).optional(),
   content: z.string().min(1).max(500_000).optional(),
