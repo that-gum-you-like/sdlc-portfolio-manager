@@ -10,6 +10,7 @@ import type { WorkItemStatus } from '@/lib/work-items';
 import { TopNav } from '@/components/top-nav';
 import { RelatedPanel } from '@/components/related-panel';
 import { CommentsThread } from '@/components/comments-thread';
+import { PendingQuestions } from '@/components/pending-questions';
 import { StatusControl } from './status-control';
 
 export const dynamic = 'force-dynamic';
@@ -188,6 +189,7 @@ export default async function ItemDetailPage({ params }: Params) {
         </aside>
       </div>
 
+      <PendingQuestions workItemId={item.id} />
       <CommentsThread workItemId={item.id} />
 
       <p className="muted" style={{ marginTop: 48, fontSize: 13 }}>

@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation';
 import { useEffect, useState, useTransition } from 'react';
 
 import { segmentBody } from '@/lib/mentions';
+import { MentionTextarea } from '@/components/mention-textarea';
 
 interface CommentRecord {
   id: string;
@@ -151,10 +152,10 @@ function NewCommentForm({
     >
       <div className="form-row">
         <label htmlFor="cc-body">Comment</label>
-        <textarea
+        <MentionTextarea
           id="cc-body"
           name="body"
-          placeholder="Use @name to tag someone — e.g. @frontend-developer can you check this?"
+          placeholder="Use @name to tag someone — type @ to see suggestions"
           required
         />
       </div>

@@ -140,6 +140,29 @@ export const relationships = sqliteTable(
   }),
 );
 
+export const questions = sqliteTable('questions', {
+  id: id(),
+  userId: userId(),
+  projectId: text('project_id')
+    .notNull()
+    .references(() => projects.id, { onDelete: 'cascade' }),
+  workItemId: text('work_item_id')
+    .notNull()
+    .references(() => workItems.id, { onDelete: 'cascade' }),
+  askedBy: text('asked_by').notNull(),
+  addressedTo: text('addressed_to'),
+  body: text('body').notNull(),
+  status: text('status', { enum: ['open', 'answered', 'cancelled'] })
+    .notNull()
+    .default('open'),
+  previousStatus: text('previous_status').notNull(),
+  askedAt: text('asked_at')
+    .notNull()
+    .$defaultFn(() => new Date().toISOString()),
+  answeredAt: text('answered_at'),
+  answerId: text('answer_id').references(() => comments.id, { onDelete: 'set null' }),
+});
+
 export const mentions = sqliteTable('mentions', {
   id: id(),
   userId: userId(),
@@ -196,3 +219,5 @@ export type Relationship = typeof relationships.$inferSelect;
 export type Mention = typeof mentions.$inferSelect;
 export type Notification = typeof notifications.$inferSelect;
 export type EvidenceLink = typeof evidenceLinks.$inferSelect;
+export type Question = typeof questions.$inferSelect;
+export type NewQuestion = typeof questions.$inferInsert;
