@@ -12,15 +12,27 @@ The system SHALL persist `discoveries` with columns: `id` (UUID), `project_id` (
 - **THEN** the system SHALL persist the discovery with `source: voice-transcript` (no transcription performed in-app — Cursor handles dictation upstream)
 
 ### Requirement: Draft generation invokes a planning persona
-The system SHALL provide `POST /api/v1/discoveries/:id/generate` accepting `{ generator: "bill-crouse" | "judy" | "barbara" | "april" | "default" }` that produces draft artifacts by calling the named planning persona (or a default pipeline that runs all four in sequence).
+The system SHALL provide `POST /api/v1/discoveries/:id/generate` accepting `{ generator: "default" | <persona-slug> }` that produces draft artifacts.
 
-#### Scenario: Generate via Bill Crouse (requirements)
-- **WHEN** a user triggers generation on a discovery with `generator: "bill-crouse"`
-- **THEN** the system SHALL invoke a Cursor automation (or seeded generation prompt) using the `bill-crouse` persona prompt to transform `raw_dump` into REQ-xxx requirement drafts with acceptance criteria
+The `default` generator SHALL be a self-contained, built-in single-pass prompt that produces requirements with acceptance criteria, stories grouped under an epic, and a basic parallelization sketch — without depending on any seeded persona. This guarantees `initial-portfolio-manager` ships a working discovery flow standalone (Decision 17).
 
-#### Scenario: Default pipeline runs all four planning personas
-- **WHEN** a user triggers generation with `generator: "default"`
-- **THEN** the system SHALL run, in order: Bill Crouse (requirements), Judy (value/complexity scoring on those requirements), Barbara (packages requirements into user stories with parent epic), April (parallelization analysis producing dependency drafts); each persona's output SHALL feed the next
+If `agentic-sdlc-framework-port` is installed, additional named generators (`bill-crouse`, `judy`, `barbara`, `april`) become available, each running its persona's prompt as a specialized pass. A user MAY also chain them by triggering generation multiple times with different personas; each pass appends drafts.
+
+#### Scenario: Default generator works on fresh install
+- **WHEN** a user on a fresh install (no framework-port) triggers generation with `generator: "default"`
+- **THEN** the system SHALL produce drafts using the built-in prompt; the resulting drafts SHALL include at minimum one epic, one or more stories with acceptance criteria, and optional parallelization-stream drafts where dependencies are evident
+
+#### Scenario: Named persona unavailable without framework-port
+- **WHEN** a user triggers generation with `generator: "bill-crouse"` on an install without framework-port
+- **THEN** the system SHALL respond 400 with error `persona_not_seeded` and message indicating framework-port provides the persona; user can either install framework-port or fall back to `default`
+
+#### Scenario: Generate via Bill Crouse with framework-port installed
+- **WHEN** framework-port is installed and a user triggers `generator: "bill-crouse"`
+- **THEN** the system SHALL run the Bill-Crouse persona prompt against `raw_dump` to produce REQ-xxx requirement drafts with acceptance criteria
+
+#### Scenario: Chaining named personas
+- **WHEN** a user triggers generation sequentially with `bill-crouse` then `judy` then `barbara` then `april`
+- **THEN** each pass SHALL append drafts (or score/refine existing pending drafts), with later passes seeing earlier-pass drafts as context
 
 #### Scenario: Generation is async
 - **WHEN** generation is triggered
@@ -92,8 +104,8 @@ The portfolio-manager dashboard SHALL include a "Recent discoveries" section sho
 - **THEN** the Recent Discoveries section SHALL render that discovery with status badge, "7 pending / 2 accepted" counts, and a link to its detail view
 
 ### Requirement: Seed discovery automation
-The system SHALL seed an automation entry `discovery-default-pipeline` in `cursor-templates/automations/` that codifies the Bill → Judy → Barbara → April default pipeline so users can publish it into a target repo for use without manual configuration.
+The system SHALL seed an automation entry `discovery-default-pipeline` in `cursor-templates/automations/` that polls `GET /api/v1/discoveries?status=draft&generation_requested=true` and runs the `default` generator against any returned discovery (matching the pull model from Decision 6).
 
-#### Scenario: Publish discovery pipeline to a project
-- **WHEN** a user publishes `discovery-default-pipeline` to a project
-- **THEN** the project's target repo SHALL receive the automation definition under the Cursor-Automations on-disk format, and triggering a discovery via the UI SHALL execute through that pipeline
+#### Scenario: Automation picks up pending generation
+- **WHEN** the `discovery-default-pipeline` automation fires and one discovery has `status: draft` with `generation_requested: true`
+- **THEN** the automation SHALL claim that discovery (setting `status: generating`), run the default prompt against its `raw_dump`, POST drafts back via `POST /api/v1/discoveries/:id/drafts`, and on completion mark the discovery `status: reviewing`

@@ -9,10 +9,10 @@ Every work item SHALL have a `project_id` foreign key referencing a `projects` r
 
 #### Scenario: Reject missing project_id
 - **WHEN** a client creates a work item without `project_id` and the user has more than one project
-- **THEN** the system SHALL reject the request with a 400 error indicating `project_id` is required; if the user has only the default `personal/inbox` project, the system SHALL default to it
+- **THEN** the system SHALL reject the request with a 400 error indicating `project_id` is required; if the user has only the default `personal/general` project, the system SHALL default to it
 
 ### Requirement: Work-item types and lifecycle
-The system SHALL support four work-item types — `epic`, `story`, `task`, `bug` — each with a status of `backlog`, `ready`, `in_progress`, `needs-human`, `in_review`, `done`, or `cancelled`. The `needs-human` status indicates work is paused awaiting human input on one or more open questions (see `hitl` capability).
+The system SHALL support eight work-item types — `epic`, `story`, `task`, `bug`, `requirement`, `roadmap-item`, `parallelization-stream`, `devlog-entry` — each with a status of `backlog`, `ready`, `in_progress`, `needs-human`, `in_review`, `done`, or `cancelled`. The `needs-human` status indicates work is paused awaiting human input on one or more open questions (see `hitl` capability). Subtype-specific fields (acceptance_criteria, complexity, value, target_start, target_end, depends_on, interface_contract) are stored in a `subtype_data` JSON column.
 
 #### Scenario: Create a story in the backlog
 - **WHEN** a human or agent creates a new work item with type `story` and no explicit status
@@ -29,6 +29,14 @@ The system SHALL support four work-item types — `epic`, `story`, `task`, `bug`
 #### Scenario: needs-human is a valid transition from in_progress
 - **WHEN** an in_progress work item has a question filed against it
 - **THEN** the system SHALL transition status to `needs-human` and store `previous_status: in_progress` for restoration when all questions resolve
+
+#### Scenario: Create a requirement subtype
+- **WHEN** a user creates a work item with type `requirement`, three acceptance criteria, complexity 5, value 4
+- **THEN** the system SHALL persist the item with `subtype_data` containing `{ acceptance_criteria: [...], complexity: 5, value: 4 }` and a generated REQ-N id
+
+#### Scenario: Devlog entries are append-only
+- **WHEN** a user attempts to PATCH the body of a `devlog-entry`
+- **THEN** the system SHALL reject the modification with a 400 error explaining devlog entries are append-only
 
 ### Requirement: Parent/child links
 The system SHALL allow any work item to declare a parent work item, forming a tree (epic → stories → tasks/bugs).

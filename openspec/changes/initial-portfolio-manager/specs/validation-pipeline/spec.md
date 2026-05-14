@@ -77,12 +77,16 @@ The work-item detail page SHALL display the current status of each enabled gate 
 - **WHEN** a user views the board with an item whose runs were pass, pass, fail, skipped
 - **THEN** the card SHALL render four dots in green, green, red, gray respectively
 
-### Requirement: Override path retained
-The system SHALL allow `in_review` → `done` overrides via the existing override-with-reason mechanism (see `quality-systems`); the override SHALL be recorded with the failing gate(s) named in the override record.
+### Requirement: Override-with-reason
+The system SHALL allow the `in_review` → `done` transition to proceed despite failing gates if the requester submits a non-empty `override_reason`. The system SHALL persist an `overrides` row recording: `id`, `work_item_id`, `failing_gates` (array), `reason` (text), `submitted_by`, `submitted_at`. Override rows are surfaced on the dashboard's "Recent overrides" feed (when present).
 
 #### Scenario: Override a failed security gate
-- **WHEN** a user submits an override with reason "Known false positive — internal-only dependency" while the `security` gate has status `fail`
-- **THEN** the system SHALL allow the transition and persist an override record naming the security gate and the reason
+- **WHEN** a user submits the transition with `{ status: "done", override_reason: "Known false positive — internal-only dependency" }` while the `security` gate has status `fail`
+- **THEN** the system SHALL allow the transition, persist an `overrides` row naming `failing_gates: ["security"]` and the reason, and proceed
+
+#### Scenario: Empty reason rejected
+- **WHEN** a user submits a transition with `override_reason: ""` while gates fail
+- **THEN** the system SHALL reject with 400 and an `override_reason_required` error
 
 ### Requirement: Validators publishable like other library entries
 Validators SHALL be publishable into a target repo (the project's `target_repo_path`) so the runner script lives with the project. Default publish path: `.cursor/validators/<gate>-<slug>.json`.

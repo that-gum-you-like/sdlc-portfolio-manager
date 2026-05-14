@@ -1,59 +1,75 @@
 # sdlc-portfolio-manager
 
-A local, single-user-first portfolio and work-item manager for agentic SDLC workflows — designed to plug into [Cursor](https://cursor.com) (and other AI coding agents) as the orchestration layer.
+A local, single-user-first portfolio + work-item + library manager for agentic SDLC workflows. Designed to plug into [Cursor](https://cursor.com) as the orchestration layer for both you and your agents.
 
-Think Azure DevOps boards + Paperclip control plane, but local, lightweight, and Cursor-native.
+Azure DevOps Boards mental model + Paperclip control-plane ergonomics, but local, lightweight, Cursor-native.
 
 ## Status
 
-Pre-alpha. Spec-driven via [OpenSpec](https://github.com/Fission-AI/OpenSpec) — see `openspec/changes/initial-portfolio-manager/` for the founding proposal.
+Pre-alpha. Spec-driven via [OpenSpec](https://github.com/Fission-AI/OpenSpec).
+
+- **`initial-portfolio-manager`** — founding change, 11 capabilities, ships standalone
+- **`agentic-sdlc-framework-port`** — additive change that ports 19 agent personas, the 5-layer memory protocol, framework knowledge, planning artifacts, and quality systems from `~/agentic-sdlc/`
+
+See `openspec/changes/<change-id>/` for proposal, design, specs, and task lists.
 
 ## Concept
 
-Two stacked capabilities, one UI:
+Three coupled pillars, one UI:
 
-### 1. Work-item portfolio
+### 1. Portfolio + projects + work items
 
-You and your Cursor agents share a single work-item store. Humans and agents both:
+Two-level hierarchy: **portfolios → projects → work items**. Each project binds to a target repo; humans and Cursor agents share the work-item store and tag each other for help via HITL questions and `@-mentions`. A unified inbox surfaces everything awaiting your attention.
 
-- File user stories, bugs, and tasks
-- Pick up work, update status, leave comments
-- Link parent/child items, label, prioritize
+### 2. Library
 
-Cursor's **Background Agents** drain the queue autonomously. You watch progress on a local Kanban board.
+A managed library of Cursor rules, skills, automations, validators, and framework docs. Browse, edit, publish into any project's target repo. Treat agent behavior like reusable, versionable assets — not snippets scattered across repos.
 
-### 2. Skills & Rules library
+### 3. Discovery + validation
 
-A managed library of Cursor **rules** (`.cursor/rules/*.mdc`) and **skills** that you (and eventually teammates) can browse, edit, version, and publish into target repos from the UI. Think of it as a package manager + editor for agent behavior:
+Discovery: dump unstructured thoughts; the system generates draft user stories with acceptance criteria, value/complexity scores, parallelization sketches — you review, edit, accept; accepted drafts become real work items wired up via the relationships graph.
 
-- Browse the library by tag, glob, or persona
-- Edit rules in-app with markdown + frontmatter validation
-- Publish a curated set into any target repo (writes the `.cursor/rules/` directory)
-- (Backlog) Team contributions, review/approval, versioning, sharing across repos
+Validation: every work item must pass four configurable gates before `done` — **quality**, **security**, **bugs**, **user-story-acceptance**. Each gate is a sandboxed validator from the library. Override with a reason if you need to.
 
 ## Architecture (planned)
 
 ```
 sdlc-portfolio-manager/
-├── apps/portfolio/       # Next.js + SQLite — UI + REST API
-│   ├── work-items/       # Stories, bugs, tasks, board, backlog
-│   └── library/          # Skills & rules editor + publisher
+├── apps/portfolio/       # Next.js (App Router) + SQLite (better-sqlite3 + Drizzle)
 ├── packages/cli/         # `pc` CLI invoked by Cursor agents
-├── cursor-templates/     # Seed rules/skills shipped with the product
-├── docs/                 # Architecture, usage, migration notes
+├── cursor-templates/     # Seed rules / skills / automations / validators
+│   ├── rules/
+│   ├── skills/
+│   ├── automations/
+│   └── validators/
+├── docs/                 # design-principles.md, getting-started, agent-protocol
 └── openspec/             # Spec-driven change history
 ```
 
 ## Design principles
 
-- **Local-first**: SQLite, no network, no SaaS dependency
-- **Single-user now, multi-user later**: UUIDs and `user_id` scoping from day one; auth stubbed
-- **Cursor-native**: Rules + Background Agents are first-class; other clients (Claude Code, CLI, raw API) are second-class
-- **OpenSpec-driven**: Every change goes through proposal → design → specs → tasks → implement
+UI decisions follow eight principles in `docs/design-principles.md` — drawn from Jony Ive's restraint at Apple, the Linear / Notion / Things 3 product design school, and accessibility good practice. In one line each:
+
+1. **Quiet by default** — restrained color, generous whitespace, type carries hierarchy
+2. **One canonical surface per concept** — no same-data-three-ways
+3. **Progressive disclosure** — essentials on first paint, depth on intent
+4. **Direct manipulation over modal dialogs** — drag, inline-edit, side panels
+5. **Keyboard-first** — every action reachable from the keyboard
+6. **Honest materials** — web conventions, not fake desktop chrome
+7. **Care in every empty state and every error** — empty states explain the next step
+8. **Consistency over novelty** — same widget for the same concept everywhere
+
+## Engineering principles
+
+- **Local-first** — SQLite, no network, no SaaS dependency
+- **Single-user now, multi-user later** — UUIDs, `user_id` and `project_id` scoping from day one; auth stubbed to `local-user`
+- **Cursor-native, not Cursor-only** — Rules, Skills, Automations, and Background Agents are first-class; clean REST + CLI surface allows other clients (Claude Code, raw API)
+- **OpenSpec-driven** — every change goes through proposal → design → specs → tasks → implement → archive
+- **Standalone shippable** — `initial-portfolio-manager` is self-contained; `agentic-sdlc-framework-port` is additive value, never a hard dependency
 
 ## Getting started
 
-Not yet — see the initial OpenSpec change for the bootstrap plan.
+Not yet runnable. Implementation tracked in `openspec/changes/initial-portfolio-manager/tasks.md`.
 
 ## License
 

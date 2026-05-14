@@ -1,210 +1,208 @@
-## 0. Portfolio > Project hierarchy (foundational — comes before work-items table)
-
-- [ ] 0.1 Schema: `portfolios` table (`id`, `user_id`, `name`, `description`, `created_at`, `updated_at`)
-- [ ] 0.2 Schema: `projects` table (`id`, `portfolio_id`, `name`, `slug`, `description`, `target_repo_path`, `settings_json`, `created_at`, `updated_at`); unique index on `(portfolio_id, slug)`
-- [ ] 0.3 Add `project_id` FK to `work_items`, `comments`, `questions`, `library_entries` (nullable for cross-project), `publish_history`, `validation_runs`, `automation_runs`, `notifications`, `mentions`
-- [ ] 0.4 Migration 0001 creates portfolios + projects + all FK additions in correct order
-- [ ] 0.5 First-run seeds `personal` portfolio and `inbox` project under `local-user`
-- [ ] 0.6 API routes: `GET/POST /api/v1/portfolios`, `GET/PATCH/DELETE /api/v1/portfolios/:id`, `GET/POST /api/v1/projects`, `GET/PATCH/DELETE /api/v1/projects/:slug`
-- [ ] 0.7 Cascade delete: removing a project removes all dependent rows in a single transaction (integration test)
-- [ ] 0.8 UI: `/portfolios` index, `/portfolios/:id` detail with project cards, `/projects/:slug` shell with sub-routes (`/board`, `/backlog`, `/dashboard`, `/settings`)
-- [ ] 0.9 UI: top-level nav with active portfolio + project, switcher dropdown
-- [ ] 0.10 UI: breadcrumbs `Portfolio › Project › Item` on every relevant page
-- [ ] 0.11 UI: project settings page (validation toggles, done-checklist gates, target repo path, published library entries summary)
-- [ ] 0.12 API client (used by CLI): respect a `--project <slug>` flag and/or `PC_PROJECT` env var
-
 ## 1. Monorepo + toolchain
 
-- [ ] 1.1 Add root `package.json` with workspaces (`apps/*`, `packages/*`) and `engines.node >= 22`
-- [ ] 1.2 Add `pnpm-workspace.yaml` or npm workspaces config; choose package manager
-- [ ] 1.3 Configure shared TypeScript base config (`tsconfig.base.json`) and per-package extends
-- [ ] 1.4 Add ESLint + Prettier configs at root; wire into each workspace
-- [ ] 1.5 Add `vitest` config at root for shared test setup
+- [ ] 1.1 Root `package.json` with workspaces (`apps/*`, `packages/*`) and `engines.node >= 22`
+- [ ] 1.2 Workspace config (pnpm or npm — pick at impl)
+- [ ] 1.3 Shared TypeScript base config (`tsconfig.base.json`) + per-package extends
+- [ ] 1.4 ESLint + Prettier configs wired into each workspace
+- [ ] 1.5 Vitest config at root
+- [ ] 1.6 Lint rule (or Drizzle wrapper) enforcing `user_id` and `project_id` scoping in every query
 
 ## 2. Database layer (`apps/portfolio/src/db/`)
 
-- [ ] 2.1 Install `better-sqlite3`, `drizzle-orm`, `drizzle-kit`
-- [ ] 2.2 Define Drizzle schema: `work_items`, `comments`, `labels`, `work_item_labels`, `library_entries`, `publish_history`, `_migrations`
-- [ ] 2.3 Add `user_id` column with default `local-user` on every user-owned table
-- [ ] 2.4 Configure UUIDv4 default for all `id` columns
-- [ ] 2.5 Write migration 0001 (initial schema) and migration runner that records to `_migrations`
-- [ ] 2.6 Add `auth.ts` with `currentUser()` returning constant `local-user` in single-user mode
-- [ ] 2.7 Integration test: insert + read survives process restart, `user_id` always populated
+- [ ] 2.1 Install `better-sqlite3`, `drizzle-orm`, `drizzle-kit`, `gray-matter`, `zod`, `uuid`
+- [ ] 2.2 Drizzle schema for all tables in dependency order (see 2.4)
+- [ ] 2.3 UUIDv4 default for all `id` columns; `user_id` default `local-user` on every user-owned row
+- [ ] 2.4 Migration 0001 creates all tables in correct FK order: `portfolios` → `projects` → `library_entries` → `work_items` → `comments` → `questions` → `notifications` → `mentions` → `relationships` → `validation_runs` → `evidence_links` → `automation_runs` → `publish_history` → `discoveries` → `discovery_drafts` → `_migrations`
+- [ ] 2.5 Migration runner records each applied migration; idempotent on restart
+- [ ] 2.6 `auth.ts` with `currentUser()` returning `local-user` in single-user mode
+- [ ] 2.7 Integration test: insert + read survives process restart; `user_id` and `project_id` always populated
 
-## 3. Work-items API (`apps/portfolio/src/app/api/v1/work-items/`)
+## 3. Portfolio + project hierarchy
 
-- [ ] 3.1 `GET /api/v1/work-items` with filters: `status`, `type`, `assignee`, `label`, `parent_id`
-- [ ] 3.2 `POST /api/v1/work-items` — create with type, title, description, parent_id (optional), labels, assignee
-- [ ] 3.3 `GET /api/v1/work-items/:id` — single item with parent + children embedded
-- [ ] 3.4 `PATCH /api/v1/work-items/:id` — partial update, validate status transitions
-- [ ] 3.5 `POST /api/v1/work-items/:id/claim` — atomic claim transitioning ready → in_progress
-- [ ] 3.6 Cycle detection on parent assignment (self + descendant rejection)
-- [ ] 3.7 Standard error contract: `{ error, message, details }` with appropriate HTTP codes
-- [ ] 3.8 Integration tests: each scenario in `specs/work-items/spec.md` becomes a test
+- [ ] 3.1 API: `GET/POST /api/v1/portfolios`, `GET/PATCH/DELETE /api/v1/portfolios/:id`
+- [ ] 3.2 API: `GET/POST /api/v1/projects`, `GET/PATCH/DELETE /api/v1/projects/:slug`; slug unique per portfolio
+- [ ] 3.3 First-run seed: `personal` portfolio + `general` project under `local-user`
+- [ ] 3.4 Cascade delete: removing a project removes all dependent rows in one transaction (integration test)
+- [ ] 3.5 Project settings JSON shape with Zod schema — validation toggles, done-checklist gates, default routing, target_repo_path
+- [ ] 3.6 CLI: respect `--project <slug>` flag and `PC_PROJECT` env var, default to user's active project
 
-## 4. Comments API
+## 4. Work-items API
 
-- [ ] 4.1 `POST /api/v1/work-items/:id/comments` — append comment with author + markdown body
-- [ ] 4.2 `GET /api/v1/work-items/:id/comments` — chronological listing
-- [ ] 4.3 Integration test: comment from agent author persists with timestamp
+- [ ] 4.1 Work-item type enum: `epic`, `story`, `task`, `bug`, `requirement`, `roadmap-item`, `parallelization-stream`, `devlog-entry`
+- [ ] 4.2 Status enum: `backlog`, `ready`, `in_progress`, `needs-human`, `in_review`, `done`, `cancelled`
+- [ ] 4.3 `GET /api/v1/work-items` with filters: `status`, `type`, `assignee`, `label`, `parent_id`, `project_id`
+- [ ] 4.4 `POST /api/v1/work-items` with subtype-specific validation (e.g., `requirement` requires `acceptance_criteria`)
+- [ ] 4.5 `GET /api/v1/work-items/:id` returns item + parent + children embedded
+- [ ] 4.6 `PATCH /api/v1/work-items/:id` partial update with status-transition validator
+- [ ] 4.7 `POST /api/v1/work-items/:id/claim` atomic ready → in_progress, sets assignee
+- [ ] 4.8 Acceptance criteria array with stable ids (AC-1, AC-2, ...); evidence_refs optional
+- [ ] 4.9 Devlog entries are append-only — PATCH on body rejected
+- [ ] 4.10 Cycle detection on parent assignment
+- [ ] 4.11 Standard error contract: `{ error, message, details }` with correct HTTP codes
+- [ ] 4.12 Integration tests: each `specs/work-items/spec.md` scenario becomes a test
 
-## 5. Portfolio UI — board
+## 5. Relationships graph
 
-- [ ] 5.1 `/board` route rendering five columns (`backlog`, `ready`, `in_progress`, `in_review`, `done`)
-- [ ] 5.2 Card component showing type icon, title, assignee, labels
-- [ ] 5.3 Drag-and-drop between columns triggering PATCH; optimistic update + rollback on error
-- [ ] 5.4 Filter bar: by label, assignee, type
-- [ ] 5.5 "New item" modal posting to API
+- [ ] 5.1 Type enum: `parent_of`, `blocks`, `depends_on`, `duplicates`, `related_to`, `predecessor_of`
+- [ ] 5.2 Composite unique index `(source_type, source_id, target_type, target_id, type)`
+- [ ] 5.3 API: `POST /api/v1/relationships`, `DELETE /api/v1/relationships/:id`, `GET /api/v1/entities/:type/:id/relationships` (grouped + inverses + computed siblings)
+- [ ] 5.4 Validators: reject self-rel; cycle detection on `parent_of` (BFS on insert); dedup symmetric `related_to`
+- [ ] 5.5 Inverse-pair table in code for read-time inversion
+- [ ] 5.6 Sibling computation: union of (a) shared canonical containment FK, (b) shared `parent_of` in relationships
+- [ ] 5.7 Containment FKs not auto-mirrored into relationships table
+- [ ] 5.8 Tests: cycle detection across 3+ node paths; inverse rendering; sibling union
 
-## 6. Portfolio UI — backlog
+## 6. Comments + mentions
 
-- [ ] 6.1 `/backlog` route rendering ordered list of `backlog` + `ready` items
-- [ ] 6.2 Rank field on work items; drag-to-reorder persists new rank
-- [ ] 6.3 Bulk "move to ready" action
+- [ ] 6.1 `POST /api/v1/work-items/:id/comments` — author + markdown body + optional kind (`note` | `evidence`) + optional `criterion_id`
+- [ ] 6.2 `GET /api/v1/work-items/:id/comments` — chronological listing
+- [ ] 6.3 `@-mention` parser (regex + handle resolver against users + personas); shared across comments and questions
+- [ ] 6.4 Mention extraction on every comment/question write — inserts `mentions` and `notifications` rows
+- [ ] 6.5 Evidence comments (`kind=evidence`) linked to criterion via `evidence_links` table
+- [ ] 6.6 Tests: mention parser handles code blocks, escapes, unknown handles
 
-## 7. Portfolio UI — item detail
+## 7. HITL — questions, notifications, inbox
 
-- [ ] 7.1 `/items/[id]` route showing all fields, parent link, children list
-- [ ] 7.2 Inline edit for title, description (markdown), labels, assignee
-- [ ] 7.3 Comments thread with markdown rendering + new-comment form
-- [ ] 7.4 Status transition controls scoped to allowed next states
+- [ ] 7.1 `POST /api/v1/work-items/:id/questions` — files question, transitions to `needs-human`, records `previous_status`
+- [ ] 7.2 `POST /api/v1/questions/:id/answer` — persists answer, on last open question resolve auto-restores to `previous_status`
+- [ ] 7.3 `GET /api/v1/questions?recipient=<handle>&status=open` powers the inbox
+- [ ] 7.4 `pc ask <id> <message>` async by default; `--wait <seconds>` blocking variant (exit 4 on timeout)
+- [ ] 7.5 `pc check-answer <question-id>` returns answer or exit 5
+- [ ] 7.6 `pc next` response payload extended with `pending_answers` array for the claiming agent
+- [ ] 7.7 Notification channel interface — `in-app` impl now; webhook/email/WA later as no-op stubs
+- [ ] 7.8 Tests: ask-answer round trip transitions status; multiple-questions hold needs-human; concurrent answers don't double-restore
 
-## 8. Skills & rules library — storage
+## 8. Cursor Automations integration
 
-- [ ] 8.1 `data/library/<type>/<slug>.mdc` file layout under user data dir
-- [ ] 8.2 Frontmatter parser/validator (`gray-matter` + `zod` schema for known fields)
-- [ ] 8.3 Library index in SQLite rebuilt from filesystem at startup + on save
-- [ ] 8.4 Seed initial library from `cursor-templates/` on first run
+- [ ] 8.1 Confirm Cursor Automations on-disk format (consult Cursor docs) — locks publish-writer schema; tracked as open question in design.md
+- [ ] 8.2 Library entry type `automation`: frontmatter `prompt`, `cron`, `scope`, `resultHook`, validated with Zod
+- [ ] 8.3 Cron expression validation in editor + on save
+- [ ] 8.4 `GET /api/v1/work-items/next-ready` with atomic claim semantics (concurrency-tested)
+- [ ] 8.5 `POST /api/v1/automation-results` accepts comments + new work items linked to a parent
+- [ ] 8.6 `automation_runs` table records every execution
+- [ ] 8.7 Publish flow extension: emit automation file(s) into target repo's `.cursor/automations/` (path per 8.1)
+- [ ] 8.8 Automation detail page: prompt, next-fires, run history, "run now"
+- [ ] 8.9 Seed two automations in `cursor-templates/automations/`: `weekly-security-review`, `weekly-bug-triage`
 
-## 9. Skills & rules library — UI
+## 9. Validation pipeline
 
-- [ ] 9.1 `/library` route browsing entries with name, description, tags
-- [ ] 9.2 `/library/[slug]` route with markdown body editor + structured frontmatter form
-- [ ] 9.3 Save action: validate frontmatter as YAML, persist file, refresh index
-- [ ] 9.4 "New rule" / "New skill" actions starting from template
-- [ ] 9.5 Inline validation errors that prevent save without losing edits
+- [ ] 9.1 Library entry type `validator`: frontmatter `gate`, `command`, `pass_exit_codes`, `output_parser`, `timeout_seconds`
+- [ ] 9.2 Runner service: subprocess sandbox — env whitelist, cwd = project target repo, captured + truncated stdout/stderr, kill on timeout
+- [ ] 9.3 Parsers: `none`, `junit-xml`, `sarif`, `json-lines` — each producing structured `findings_json`
+- [ ] 9.4 Auto-trigger gates on `in_progress` → `in_review` transition; each marked `running` until complete
+- [ ] 9.5 Done transition validator: refuses `in_review` → `done` unless all enabled gates have most-recent `pass` (or `skipped`)
+- [ ] 9.6 Override-with-reason: non-empty reason, transition proceeds, override record stores failing gate names + reason + user + timestamp
+- [ ] 9.7 User-story-acceptance built-in matcher: walks `acceptance_criteria`, matches against test names containing criterion keywords OR `evidence_links`
+- [ ] 9.8 `pc validate <id>` / `pc validate <id> --gate <gate>` CLI commands
+- [ ] 9.9 `pc comment <id> --kind evidence --criterion <AC-id> <message>` CLI command
+- [ ] 9.10 Seed default validators per gate in `cursor-templates/validators/`: `quality` (`npm run lint && npm run typecheck`), `security` (calls `security-review` skill), `bugs` (`npm test`, parser `junit-xml`), `user-story-acceptance` (built-in)
+- [ ] 9.11 Validator publish path: `.cursor/validators/<gate>-<slug>.json` in project target repo
+- [ ] 9.12 Tests: hung validator killed; failing gate blocks done; override records gates; acceptance matcher matches by keyword
 
-## 10. Skills & rules library — publish
+## 10. Discovery workflow
 
-- [ ] 10.1 "Publish to repo" modal: select target repo path, select entries, preview file writes
-- [ ] 10.2 Detect overwrites and require per-file confirmation
-- [ ] 10.3 Write `.mdc` files into target's `.cursor/rules/` or `.cursor/skills/`
-- [ ] 10.4 Record publish event in `publish_history` (entry id, target path, timestamp)
-- [ ] 10.5 Publish-history panel on entry detail view
+- [ ] 10.1 Schema: `discoveries`, `discovery_drafts`; `source_discovery_id` FK on `work_items`
+- [ ] 10.2 API: `POST /api/v1/discoveries`, `GET /api/v1/discoveries`, `GET /api/v1/discoveries/:id`, `PATCH /api/v1/discoveries/:id` (append-only to `raw_dump`), `POST /api/v1/discoveries/:id/generate`
+- [ ] 10.3 API: `PATCH /drafts/:id` (edit), `POST /drafts/:id/accept`, `POST /drafts/:id/reject`
+- [ ] 10.4 Generator dispatcher: `default` (built-in single-pass prompt, no persona dep) OR named persona (`bill-crouse`/`judy`/`barbara`/`april` if seeded via framework-port)
+- [ ] 10.5 Generation execution model: Cursor Automation polls `GET /api/v1/discoveries?status=draft&generation_requested=true`, runs prompt against `raw_dump`, posts drafts via API (matches Decision 6 pull model)
+- [ ] 10.6 Accept logic: build resulting work item from `draft_data`, set `source_discovery_id`, set `parent_id` if `parent_draft_id` already accepted; on accept of both ends of `relationship_drafts` entry, insert `relationships` row
+- [ ] 10.7 HITL integration: persona files question against discovery → inbox → answer → resume generation
+- [ ] 10.8 CLI: `pc discovery new`, `pc discovery generate <id> [--persona <name>]`, `pc discovery list`, `pc discovery show <id>`; supports stdin/pipe
+- [ ] 10.9 Seed automation `cursor-templates/automations/discovery-default-pipeline.json`
+- [ ] 10.10 Tests: accept-parent-then-children produces correct FK + relationships; regenerate marks pending drafts as superseded; HITL question pauses generation; voice-transcript source preserved
 
-## 11. `pc` CLI (`packages/cli/`)
+## 11. Skills & rules library — storage
 
-- [ ] 11.1 CLI scaffold using `commander` or `citty`; binary registered as `pc`
-- [ ] 11.2 `pc next --agent <name>` — claim next ready task, print parseable summary
-- [ ] 11.3 `pc done <id>` — set status to in_review
-- [ ] 11.4 `pc comment <id> <message>` — post comment (stdin supported for long bodies)
-- [ ] 11.5 `pc file <type> <title>` — create work item, print new id
-- [ ] 11.6 Config: `PC_API_URL` env var, default `http://localhost:3737`
-- [ ] 11.7 Exit codes documented; `pc next` exits 2 on no-ready-work
+- [ ] 11.1 `data/library/<type>/<slug>.<ext>` file layout under user data dir (`.mdc` for rules, `.md`/folder for skills, `.json` for automations + validators)
+- [ ] 11.2 Frontmatter parser + validator (`gray-matter` + Zod schemas per type)
+- [ ] 11.3 Library index in SQLite rebuilt from filesystem at startup + on save
+- [ ] 11.4 Seed initial library from `cursor-templates/` on first run
 
-## 12. Seed Cursor rules in `cursor-templates/`
+## 12. Skills & rules library — UI
 
-- [ ] 12.1 `cursor-templates/rules/agent-protocol.mdc` — teaches agent to call `pc next`, work the task, `pc done`
-- [ ] 12.2 `cursor-templates/rules/work-item-discipline.mdc` — file new bugs/follow-ups as work items, not as TODO comments
-- [ ] 12.3 `cursor-templates/skills/<seed-skill>/` — at least one example skill, with SKILL.md + scripts if needed (pending confirmation of Cursor skill format)
+- [ ] 12.1 `/library` route browsing entries with name, description, tags, type filter
+- [ ] 12.2 `/library/[slug]` route — markdown editor for body + structured form for frontmatter
+- [ ] 12.3 Save: validate frontmatter as YAML + Zod, persist file, refresh index
+- [ ] 12.4 "New rule" / "New skill" / "New automation" / "New validator" actions starting from per-type template
+- [ ] 12.5 Inline validation errors prevent save without losing edits
 
-## 13. Docs
+## 13. Skills & rules library — publish
 
-- [ ] 13.1 `docs/getting-started.md` — install, run, connect Cursor
-- [ ] 13.2 `docs/agent-protocol.md` — how Cursor agents interact with the system
-- [ ] 13.3 `docs/multi-user-roadmap.md` — what changes when we switch off single-user mode
-- [ ] 13.4 Top-level `README.md` updated to point at all of the above
+- [ ] 13.1 "Publish to project" modal: select project (auto-binds to `target_repo_path`), select entries, preview file writes
+- [ ] 13.2 Overwrite detection requires per-file confirmation
+- [ ] 13.3 Write files into the right `.cursor/<dir>/` per entry type
+- [ ] 13.4 Record publish event in `publish_history`
+- [ ] 13.5 Publish-history panel on entry detail view
 
-## 14. Local dev experience
+## 14. Portfolio UI — board
 
-- [ ] 14.1 `npm run dev` starts Next.js on `:3737` and watches CLI build
-- [ ] 14.2 First-run: create data dir, run migrations, seed library
-- [ ] 14.3 Health-check endpoint `GET /api/v1/health` returning version + db status
+- [ ] 14.1 `/board` (cross-project) and `/projects/:slug/board` (project-scoped) routes
+- [ ] 14.2 Six columns: `backlog`, `ready`, `in_progress`, `needs-human`, `in_review`, `done` (and `cancelled` hidden behind a filter)
+- [ ] 14.3 Card component: type icon, title, assignee, labels, 4-dot validation indicator, `needs-human` question-count badge
+- [ ] 14.4 Drag-to-status with optimistic update + rollback; respects allowed transitions
+- [ ] 14.5 Filter bar: label, assignee, type, project (top-level only)
+- [ ] 14.6 "New item" modal with subtype-aware form
 
-## 14a. Relationships graph
+## 15. Portfolio UI — backlog
 
-- [ ] 14a.1 Schema: `relationships` (`id`, `source_type`, `source_id`, `target_type`, `target_id`, `type`, `created_at`, `created_by`, `note`); composite unique index on `(source_type, source_id, target_type, target_id, type)` to prevent dup
-- [ ] 14a.2 Type enum implementation: `parent_of`, `blocks`, `depends_on`, `duplicates`, `related_to`, `predecessor_of`; inverse-pair table in code for read-time inversion
-- [ ] 14a.3 API: `POST /api/v1/relationships`, `DELETE /api/v1/relationships/:id`, `GET /api/v1/entities/:type/:id/relationships` (returns grouped by type with inverses + computed siblings)
-- [ ] 14a.4 Validator: reject self-relationships (source == target); reject cycles in `parent_of` (BFS/DFS check on insert)
-- [ ] 14a.5 Validator: deduplicate symmetric `related_to` on create (A→B same as B→A)
-- [ ] 14a.6 Sibling computation: union of (a) entities sharing a `parent_of` parent in relationships, (b) entities sharing canonical FK parent (work items with same `parent_id`, projects with same `portfolio_id`)
-- [ ] 14a.7 Containment FKs remain canonical — do not auto-insert `parent_of` rows for FK-based containment
-- [ ] 14a.8 UI: "Related" panel component shared across portfolio/project/work-item detail pages, with grouped sections + inline add-relationship form
-- [ ] 14a.9 UI: graph view component (use cytoscape.js, react-flow, or similar — pick one in design), depth selector 1/2/3
-- [ ] 14a.10 Tests: cycle detection across 3+ node paths; inverse rendering; sibling computation across both sources
+- [ ] 15.1 `/backlog` and `/projects/:slug/backlog` routes
+- [ ] 15.2 Ordered list of `backlog` + `ready` items with drag-to-reorder
+- [ ] 15.3 Rank column persisted on reorder
+- [ ] 15.4 Bulk "move to ready" action
 
-## 14b. Validation pipeline
+## 16. Portfolio UI — item detail
 
-- [ ] 14b.1 Schema: `validation_runs` (`id`, `work_item_id`, `project_id`, `gate`, `validator_entry_id`, `started_at`, `completed_at`, `status`, `exit_code`, `stdout_snippet`, `stderr_snippet`, `findings_json`)
-- [ ] 14b.2 Schema: `evidence_links` (`id`, `comment_id`, `acceptance_criterion_id`, `criterion_text_snapshot`) — connects evidence comments to specific acceptance criteria
-- [ ] 14b.3 Extend `library_entries.type` enum: add `validator` alongside `rule`, `skill`, `automation`
-- [ ] 14b.4 Validator frontmatter schema with Zod: `gate` enum, `command` template, `pass_exit_codes` array, `output_parser` enum, `timeout_seconds` int
-- [ ] 14b.5 Runner service: subprocess with timeout, env whitelist, working dir = project target repo, captured stdout/stderr (truncated to N KB), parsed output per `output_parser`
-- [ ] 14b.6 Parsers: `none`, `junit-xml`, `sarif`, `json-lines` — each producing a structured `findings_json` shape
-- [ ] 14b.7 Auto-trigger gates on `in_progress` → `in_review` transition; mark each `running` until complete
-- [ ] 14b.8 `pc validate <id>` / `pc validate <id> --gate <gate>` CLI commands
-- [ ] 14b.9 `pc comment <id> --kind evidence --criterion <AC-id> <message>` CLI command writing an evidence-linked comment
-- [ ] 14b.10 Done transition validator: enabled gates must have most-recent status `pass` (or `skipped`); else 400 with gate names
-- [ ] 14b.11 Override path: existing override-with-reason mechanism records the failing gate(s)
-- [ ] 14b.12 User-story-acceptance built-in matcher: walk acceptance_criteria, match against (a) test names containing criterion keywords, (b) evidence comments linked via `evidence_links`
-- [ ] 14b.13 Seed default validators per gate (quality, security, bugs, user-story-acceptance) in `cursor-templates/validators/`
-- [ ] 14b.14 Validator publish path: write to project target repo at `.cursor/validators/<gate>-<slug>.json`
-- [ ] 14b.15 UI: validation panel on item detail page with gate rows, last-run, "Run again" actions, expandable run detail
-- [ ] 14b.16 UI: board card gate-status indicator (four colored dots)
-- [ ] 14b.17 Tests: hung validator killed at timeout; failing gate blocks done; override records gate names; acceptance matcher matches by keyword
+- [ ] 16.1 `/items/[id]` route showing all fields, parent link, children list
+- [ ] 16.2 Inline edit for title, description (markdown), labels, assignee, acceptance criteria
+- [ ] 16.3 Comments thread (markdown render + new-comment form) with mentions rendered as links
+- [ ] 16.4 "Pending questions" section above comments thread; answered-questions collapsible
+- [ ] 16.5 Status transition controls scoped to allowed next states (includes `needs-human`)
+- [ ] 16.6 Validation panel: gate rows, last-run, "Run again", expandable findings
+- [ ] 16.7 Related panel: relationships grouped by type with inline add-relationship
+- [ ] 16.8 Optional graph view (2 hops default, no toggle clutter)
 
-## 14c. Discovery workflow
+## 17. Portfolio UI — nav, dashboard, discovery surfaces
 
-- [ ] 14c.1 Schema: `discoveries` (`id`, `project_id`, `user_id`, `raw_dump`, `source`, `status`, `created_at`, `updated_at`, `accepted_at`)
-- [ ] 14c.2 Schema: `discovery_drafts` (`id`, `discovery_id`, `draft_type`, `draft_data` JSON, `parent_draft_id`, `relationship_drafts` JSON, `status`, `resulting_work_item_id`, `generated_by`, `created_at`, `updated_at`)
-- [ ] 14c.3 Add `source_discovery_id` FK to `work_items`
-- [ ] 14c.4 API: `POST /api/v1/discoveries`, `GET /api/v1/discoveries`, `GET /api/v1/discoveries/:id`, `PATCH /api/v1/discoveries/:id` (append to raw_dump), `POST /api/v1/discoveries/:id/generate`
-- [ ] 14c.5 API: `PATCH /api/v1/discoveries/:id/drafts/:draft_id` (edit draft_data inline), `POST /api/v1/discoveries/:id/drafts/:draft_id/accept`, `POST /api/v1/discoveries/:id/drafts/:draft_id/reject`
-- [ ] 14c.6 Generator dispatcher: maps `generator` param to a planning persona (bill-crouse / judy / barbara / april / default) — runs the seeded persona prompt against the raw_dump via Cursor automation; default = sequential pipeline
-- [ ] 14c.7 Accept logic: build resulting work item from `draft_data`, set `source_discovery_id`, set `parent_id` if `parent_draft_id` was previously accepted; on accept of both ends of a `relationship_drafts` entry, insert corresponding `relationships` row
-- [ ] 14c.8 HITL integration: planning persona's questions land in `/inbox` with the discovery as context; resume generation on answer
-- [ ] 14c.9 CLI: `pc discovery new`, `pc discovery generate <id> --persona <name>`, `pc discovery list --project <slug>`, `pc discovery show <id>`
-- [ ] 14c.10 UI: `/discoveries` list with status badges + draft counts
-- [ ] 14c.11 UI: `/discoveries/new` intake form (multiline textarea, source selector, generator picker, project picker if multi-project)
-- [ ] 14c.12 UI: `/discoveries/:id` review page — raw dump on left, drafts grouped by type on right, inline-edit, accept/reject, regenerate, append-to-dump
-- [ ] 14c.13 UI: live updates during generation (SSE or polling) — drafts appear as personas finish their passes
-- [ ] 14c.14 UI: dashboard "Recent Discoveries" section
-- [ ] 14c.15 Seed automation `cursor-templates/automations/discovery-default-pipeline.json`
-- [ ] 14c.16 Tests: accept-parent-then-children produces correct FK + relationships; regenerate marks pending drafts as superseded; HITL question pauses generation; voice-transcript source preserved
+- [ ] 17.1 Top-level nav with active portfolio + project context, switcher dropdown
+- [ ] 17.2 Breadcrumbs `Portfolio › Project › Item` on every detail page
+- [ ] 17.3 `/portfolios` index + `/portfolios/:id` rollup view (project cards with summary stats)
+- [ ] 17.4 `/projects/:slug` shell with `/board`, `/backlog`, `/dashboard`, `/settings` sub-routes
+- [ ] 17.5 Project settings page (validation toggles, done-checklist gates, target repo path, published library summary)
+- [ ] 17.6 `/dashboard` route — 4 sections (Today's focus, Active work, Health [validation pass-rate + bottlenecks], Recent activity); secondary metrics behind progressive disclosure
+- [ ] 17.7 `/inbox` global route with grouped sections (questions, mentions, assignments); badge with unread count in nav
+- [ ] 17.8 `/discoveries` list + `/discoveries/new` intake + `/discoveries/:id` review page (raw dump on left, drafts grouped by type on right, inline edit, accept/reject, regenerate, append-to-dump)
+- [ ] 17.9 Live updates during discovery generation (polling at MVP per design open question)
 
-## 15. Human-in-the-loop (HITL) thread
+## 18. `pc` CLI (`packages/cli/`)
 
-- [ ] 15a.1 Schema: `questions` table (`id`, `work_item_id`, `asked_by`, `addressed_to`, `body`, `status`, `asked_at`, `answered_at`, `answer_id`, `previous_status`)
-- [ ] 15a.2 Schema: `notifications` table (`id`, `recipient`, `kind`, `source_id`, `work_item_id`, `created_at`, `read_at`)
-- [ ] 15a.3 Schema: `mentions` table (`id`, `source_type`, `source_id`, `mentioned_handle`, `resolved_user_id`, `resolved_agent_name`)
-- [ ] 15a.4 Status enum extended with `needs-human`; transition validator handles entering + restoring
-- [ ] 15a.5 `POST /api/v1/work-items/:id/questions` — file a question; transition item to needs-human
-- [ ] 15a.6 `POST /api/v1/questions/:id/answer` — answer; auto-restore work item to `previous_status` when all open questions on the item resolve
-- [ ] 15a.7 `GET /api/v1/questions?recipient=<handle>&status=open` — power the inbox
-- [ ] 15a.8 `@-mention` parser (regex + handle resolver against users + personas); shared across comments and questions
-- [ ] 15a.9 Mention extraction runs on every comment/question write; inserts `mentions` and `notifications` rows
-- [ ] 15a.10 CLI `pc ask <id> <message>` (with `--wait <seconds>` blocking variant, exit code 4 on timeout)
-- [ ] 15a.11 CLI `pc check-answer <question-id>` (exit code 5 if unanswered)
-- [ ] 15a.12 `pc next` response payload extended with `pending_answers` for the claiming agent
-- [ ] 15a.13 UI: Kanban board adds `needs-human` column with question-count badge per card
-- [ ] 15a.14 UI: item detail page renders "Pending questions" section + answered-questions collapsible
-- [ ] 15a.15 UI: mentions rendered as clickable links to user/agent detail pages
-- [ ] 15a.16 UI: `/inbox` route with grouped sections (questions, mentions, assignments)
-- [ ] 15a.17 UI: global nav inbox badge with unread count, polled or via SSE/websocket (pick simplest first)
-- [ ] 15a.18 Notification channel interface — `in-app` impl now; webhook/email/WA later as no-op stubs
-- [ ] 15a.19 Tests: ask-answer round trip transitions status correctly; multiple-questions hold needs-human; mention parser handles edge cases (code blocks, escape, unknown handle)
+- [ ] 18.1 CLI scaffold using `commander` or `citty`; binary registered as `pc`
+- [ ] 18.2 Core commands: `pc next [--agent <name>]`, `pc done <id>`, `pc comment <id> <message>`, `pc file <type> <title>`
+- [ ] 18.3 HITL commands: `pc ask`, `pc ask --wait`, `pc check-answer`
+- [ ] 18.4 Validation commands: `pc validate <id> [--gate <gate>]`, `pc comment <id> --kind evidence --criterion <AC-id> <message>`
+- [ ] 18.5 Discovery commands: `pc discovery new`, `pc discovery generate <id> [--persona <name>]`, `pc discovery list`, `pc discovery show <id>`
+- [ ] 18.6 Config: `PC_API_URL` (default `http://localhost:3737`), `PC_PROJECT` (default active project), `--project <slug>` override
+- [ ] 18.7 Exit codes documented: 0 success; 2 no ready work; 4 ask timeout; 5 unanswered; 1 generic error
 
-## 16. Cursor Automations integration
+## 19. Seed `cursor-templates/`
 
-- [ ] 16.1 Confirm Cursor Automations on-disk format (consult Cursor docs); document the file path + JSON schema before locking the publish writer
-- [ ] 16.2 Extend `library_entries.type` enum to include `automation` alongside `rule` and `skill`
-- [ ] 16.3 Automation frontmatter schema: `prompt` (markdown), `cron` (string), `scope` (repo/labels/globs), `resultHook` (enum: `file-findings-as-bugs` | `comment-only` | `custom`)
-- [ ] 16.4 Cron expression validation in the editor + on save
-- [ ] 16.5 `GET /api/v1/work-items/next-ready` with atomic claim semantics (see specs/cursor-automations)
-- [ ] 16.6 `POST /api/v1/automation-results` accepting comments + new work items linked to a parent
-- [ ] 16.7 `automation_runs` table: `id`, `automation_entry_id`, `started_at`, `completed_at`, `status`, `summary`, `created_item_ids`
-- [ ] 16.8 Publish flow extension: emit Cursor Automation file(s) into target repo and record `publish_history` row
-- [ ] 16.9 Automation-detail page: prompt, cron next-fires, run history list, manual "run now" trigger (sends the prompt to Cursor via documented mechanism — TBD in 16.1)
-- [ ] 16.10 Seed two automations in `cursor-templates/`: `weekly-security-review` and `weekly-bug-triage`
-- [ ] 16.11 Concurrency test: two `next-ready` calls vs one ready item — exactly one wins
+- [ ] 19.1 `cursor-templates/rules/agent-protocol.mdc` — teaches agent: `pc next` → work → `pc done`
+- [ ] 19.2 `cursor-templates/rules/work-item-discipline.mdc` — file new bugs/follow-ups as work items, not TODO comments
+- [ ] 19.3 `cursor-templates/skills/` — at least one example skill in proper format (pending 8.1 Cursor docs review)
+- [ ] 19.4 `cursor-templates/validators/` — 4 default validators per gate (see 9.10)
+- [ ] 19.5 `cursor-templates/automations/` — `discovery-default-pipeline`, `weekly-security-review`, `weekly-bug-triage`
+
+## 20. Docs
+
+- [ ] 20.1 `docs/getting-started.md` — install, run, connect Cursor
+- [ ] 20.2 `docs/agent-protocol.md` — how Cursor agents interact with the system
+- [ ] 20.3 `docs/multi-user-roadmap.md` — what changes when single-user mode flips
+- [ ] 20.4 `docs/design-principles.md` — UI principles per Decision 18
+- [ ] 20.5 Top-level `README.md` updated to point at all of the above
+
+## 21. Local dev experience
+
+- [ ] 21.1 `npm run dev` starts Next.js on `:3737`, watches CLI build
+- [ ] 21.2 First-run wizard: create data dir, run migrations, seed library, create default portfolio + project
+- [ ] 21.3 Health-check endpoint `GET /api/v1/health` returning version + db status
+- [ ] 21.4 Clear error on Node version mismatch (per `engines` field)

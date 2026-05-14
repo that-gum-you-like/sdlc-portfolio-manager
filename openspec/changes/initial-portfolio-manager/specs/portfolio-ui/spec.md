@@ -50,6 +50,24 @@ The system SHALL render a top-level navigation showing the active portfolio + pr
 - **WHEN** a user opens `/portfolios/<id>`
 - **THEN** the system SHALL render a card per project with summary stats (open count, in_progress count, needs-human count, validation pass rate %)
 
+### Requirement: Dashboard with four focused sections
+Per Decision 18 (restraint), the system SHALL render `/dashboard` and `/projects/:slug/dashboard` with exactly four primary sections:
+
+1. **Today's focus** — items @-mentioning you, items in `needs-human` assigned to you, items moved to `in_review` today that need your verification
+2. **Active work** — items currently `in_progress`, grouped by assignee
+3. **Health** — validation pass-rate (rolling 7 days), open bottleneck count, current override count
+4. **Recent activity** — last 10 events across the project(s) — comments, status changes, automation runs, discoveries, overrides
+
+Secondary metrics (maturation, capability drift, full override list, run-by-run automation history) SHALL be reachable from these four sections via "See all" links, not duplicated as additional dashboard sections.
+
+#### Scenario: Dashboard loads with exactly four sections
+- **WHEN** a user navigates to `/dashboard`
+- **THEN** the system SHALL render the four sections listed above, each with at least the most recent five entries or a helpful empty-state placeholder; no additional primary sections SHALL appear
+
+#### Scenario: Empty state guides the user
+- **WHEN** a user navigates to `/dashboard` on a fresh install with no work items
+- **THEN** the "Today's focus" section SHALL show "Nothing waiting on you. Start with `/discoveries/new` or `/board`." (per Decision 18 — every empty state is helpful)
+
 ### Requirement: Validation pipeline UI
 The system SHALL render validation gate results on the work-item detail page: a "Validation" panel listing each enabled gate with its current status (pass / fail / running / skipped / error), last-run timestamp, "Run again" action, and (on click) full output / findings.
 
@@ -79,11 +97,11 @@ The system SHALL render a "Related" panel on portfolio, project, and work-item d
 - **THEN** the system SHALL POST to the relationships API and re-render the panel with B under "Blocks"
 
 ### Requirement: Graph view per entity
-The system SHALL provide a graph visualization on each entity detail page showing the entity centered with relationships rendered as edges to adjacent entities, depth configurable to 1, 2, or 3 hops.
+The system SHALL provide a graph visualization on each entity detail page showing the entity centered with two hops of relationships rendered as edges to adjacent entities. Depth is fixed at 2 hops (see Decision 18); clicking a node re-centers the view on that node.
 
-#### Scenario: View 2-hop graph
-- **WHEN** a user clicks "Graph view" on a work item with three direct relationships
-- **THEN** the system SHALL render the work item centered with three first-hop nodes and any second-hop nodes; clicking a node SHALL navigate to that entity's detail page
+#### Scenario: Click a node to re-center
+- **WHEN** a user clicks any visible node in the graph view
+- **THEN** the system SHALL navigate to that entity's detail page and render a fresh 2-hop graph centered on it
 
 ### Requirement: Discovery intake + review UI
 The system SHALL provide `/discoveries` (list view per project), `/discoveries/new` (intake form with multiline textarea, generator picker, source selector), and `/discoveries/:id` (raw dump + generated drafts panel with inline-edit, accept, reject, regenerate actions).

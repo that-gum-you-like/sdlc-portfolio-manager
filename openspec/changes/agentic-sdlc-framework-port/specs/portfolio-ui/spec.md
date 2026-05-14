@@ -1,11 +1,21 @@
+## MODIFIED Requirements
+
+### Requirement: Dashboard with four focused sections
+The base dashboard from `initial-portfolio-manager` (Today's focus, Active work, Health, Recent activity) SHALL be extended with maturation, drift, and override insights surfaced via existing sections, not as new primary blocks (per Decision 18 — restraint):
+
+- **Health** SHALL incorporate capability-drift warning count and maturation snapshot link
+- **Recent activity** SHALL include `maturation_events`, override entries, and recent automation runs in the same chronological feed
+- A dedicated `/dashboard/insights` deep-link SHALL provide the full maturation × drift × override × automation breakdown for users who want it
+
+#### Scenario: Health section shows drift warning
+- **WHEN** an agent has capabilities flagged as drift in the last 7 days
+- **THEN** the Health section SHALL display "N capability drift warnings" with a link to `/dashboard/insights#drift`
+
+#### Scenario: Insights page surfaces full maturation matrix
+- **WHEN** a user opens `/dashboard/insights`
+- **THEN** the system SHALL render a matrix of (agent × target-repo × current-level) with most-recent transition timestamps and the override + automation feeds expanded
+
 ## ADDED Requirements
-
-### Requirement: Dashboard view
-The system SHALL render a `/dashboard` route summarizing: today's progress (counts of items moved per status), open bottlenecks, maturation snapshot per (agent × target-repo), capability drift warnings, recent overrides, recent automation runs.
-
-#### Scenario: Dashboard loads with all sections
-- **WHEN** a user navigates to `/dashboard`
-- **THEN** the system SHALL render six sections — Progress, Bottlenecks, Maturation, Drift, Overrides, Automation Runs — each with at least the most recent five entries or empty-state placeholder
 
 ### Requirement: Agent detail view
 The system SHALL provide a `/agents/<name>` route for each persona showing: persona body, capabilities declared, capability log (recent), maturation level per target repo, recent memory entries, work items assigned (open + recent closed).

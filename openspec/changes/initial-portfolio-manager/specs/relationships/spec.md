@@ -79,11 +79,11 @@ The system SHALL render a "Related" panel on every portfolio, project, and work-
 - **THEN** the system SHALL POST to the relationships API and re-render the panel with B under "Blocks"
 
 ### Requirement: Graph view
-The system SHALL provide a per-entity graph visualization showing the entity at center with up to two hops of relationships rendered as a node-edge diagram, with hop depth configurable (1, 2, or 3).
+The system SHALL provide a per-entity graph visualization showing the entity at center with two hops of relationships rendered as a node-edge diagram. Per design Decision 18, depth is fixed at 2 hops — no toggle clutter; users requiring deeper exploration navigate by clicking through nodes.
 
 #### Scenario: View 2-hop graph
 - **WHEN** a user clicks "Graph view" on a work item with three direct relationships and ten transitive
-- **THEN** the system SHALL render a graph diagram with the work item centered, three first-hop nodes, and up to ten second-hop nodes; clicking any node SHALL navigate to that entity's detail page
+- **THEN** the system SHALL render a graph diagram with the work item centered, three first-hop nodes, and up to ten second-hop nodes; clicking any node SHALL navigate to that entity's detail page (making it the new center of a fresh 2-hop view)
 
 ### Requirement: Relationships scoped by access
 The system SHALL only return relationships whose source AND target are visible to the current user under `user_id` scoping (single-user mode: all relationships owned by `local-user`).

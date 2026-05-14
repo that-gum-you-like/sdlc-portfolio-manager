@@ -55,11 +55,11 @@ Every work-item detail, board card, and list row SHALL render a breadcrumb of th
 - **THEN** the system SHALL navigate to that project's detail view
 
 ### Requirement: Default portfolio and project on first run
-The system SHALL create a default portfolio (`personal`) and a default project (`inbox`) on first run so that single-user / no-setup interaction works immediately. Subsequent work items SHALL default to `project_id = inbox` if not specified explicitly.
+The system SHALL create a default portfolio (`personal`) and a default project (`general`) on first run so that single-user / no-setup interaction works immediately. Subsequent work items SHALL default to `project_id = inbox` if not specified explicitly.
 
 #### Scenario: First-time user creates a work item without configuring anything
 - **WHEN** a fresh-install user creates a work item via the UI without choosing a project
-- **THEN** the system SHALL place the item in the `personal/inbox` portfolio/project
+- **THEN** the system SHALL place the item in the `personal/general` portfolio/project (chosen to avoid name collision with the `/inbox` HITL route)
 
 ### Requirement: Project target_repo binds publish flow
 The library publish flow SHALL accept a `project_id` and use that project's `target_repo_path` as the destination, removing the need to type the path each publish.
