@@ -122,7 +122,7 @@ program
 // pc done <id>
 program
   .command('done <id>')
-  .description('Transition a work item to in_review.')
+  .description('Transition a work item to in_review (work-as-complete signal).')
   .action(async (id: string) => {
     const cfg = getGlobalOpts();
     try {
@@ -133,6 +133,28 @@ program
         { status: 'in_review' },
       );
       process.stdout.write(`${data?.workItem.id}\tin_review\n`);
+    } catch (err) {
+      handleApiError(err);
+    }
+  });
+
+// pc ship <id> [--override-reason "..."]
+program
+  .command('ship <id>')
+  .description('Transition a work item from in_review to done. Gated by validation; pass --override-reason to force.')
+  .option('--override-reason <reason>', 'Reason for overriding failing validation gates')
+  .action(async (id: string, opts: { overrideReason?: string }) => {
+    const cfg = getGlobalOpts();
+    const payload: Record<string, unknown> = { status: 'done' };
+    if (opts.overrideReason) payload.overrideReason = opts.overrideReason;
+    try {
+      const { data } = await apiRequest<{ workItem: WorkItemSummary }>(
+        cfg.apiUrl,
+        'PATCH',
+        `/api/v1/work-items/${id}`,
+        payload,
+      );
+      process.stdout.write(`${data?.workItem.id}\tdone\n`);
     } catch (err) {
       handleApiError(err);
     }
@@ -347,6 +369,67 @@ program
         process.exit(1);
       }
       process.stdout.write(`${answer.body}\n`);
+    } catch (err) {
+      handleApiError(err);
+    }
+  });
+
+// pc validate <id> [--gate <gate>]
+interface GateState {
+  gate: string;
+  status: 'pass' | 'fail' | 'error' | 'skipped' | 'running' | 'never_run';
+  lastRunId: string | null;
+  lastRunAt: string | null;
+}
+interface RunResult {
+  gate: string;
+  validatorSlug: string;
+  validationRunId: string;
+  status: 'pass' | 'fail' | 'error' | 'skipped';
+}
+
+program
+  .command('validate <id>')
+  .description('Trigger validation gates for a work item. Prints a parseable summary; non-zero exit if any gate failed.')
+  .option('--gate <gate>', 'Run only one gate (quality|security|bugs|user-story-acceptance)')
+  .action(async (id: string, opts: { gate?: string }) => {
+    const cfg = getGlobalOpts();
+    const payload = opts.gate ? { gate: opts.gate } : undefined;
+    try {
+      const { data } = await apiRequest<{ runs: RunResult[] }>(
+        cfg.apiUrl,
+        'POST',
+        `/api/v1/work-items/${id}/validate`,
+        payload,
+      );
+      const runs = data?.runs ?? [];
+      for (const r of runs) {
+        process.stdout.write(`${r.gate}\t${r.status}\t${r.validatorSlug}\n`);
+      }
+      const anyFailed = runs.some((r) => r.status === 'fail' || r.status === 'error');
+      process.exit(anyFailed ? 1 : 0);
+    } catch (err) {
+      handleApiError(err);
+    }
+  });
+
+// pc validation-status <id>
+program
+  .command('validation-status <id>')
+  .description('Print the most-recent status of each gate for a work item.')
+  .action(async (id: string) => {
+    const cfg = getGlobalOpts();
+    try {
+      const { data } = await apiRequest<{ states: GateState[] }>(
+        cfg.apiUrl,
+        'GET',
+        `/api/v1/work-items/${id}/validation-runs`,
+      );
+      for (const s of data?.states ?? []) {
+        process.stdout.write(
+          `${s.gate}\t${s.status}\t${s.lastRunAt ?? 'never'}\n`,
+        );
+      }
     } catch (err) {
       handleApiError(err);
     }
