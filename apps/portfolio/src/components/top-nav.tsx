@@ -1,7 +1,15 @@
 import Link from 'next/link';
 
 interface TopNavProps {
-  active?: 'home' | 'board' | 'backlog' | 'automations' | 'library' | 'discoveries' | 'inbox';
+  active?:
+    | 'home'
+    | 'dashboard'
+    | 'board'
+    | 'backlog'
+    | 'automations'
+    | 'library'
+    | 'discoveries'
+    | 'inbox';
 }
 
 export function TopNav({ active }: TopNavProps) {
@@ -9,6 +17,9 @@ export function TopNav({ active }: TopNavProps) {
     <nav className="top-nav">
       <Link href="/" className={['brand', active === 'home' ? 'active' : ''].join(' ')}>
         sdlc-portfolio-manager
+      </Link>
+      <Link href="/dashboard" className={active === 'dashboard' ? 'active' : ''}>
+        Dashboard
       </Link>
       <Link href="/board" className={active === 'board' ? 'active' : ''}>
         Board

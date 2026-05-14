@@ -261,6 +261,22 @@ export const discoveryDrafts = sqliteTable('discovery_drafts', {
   updatedAt: updatedAt(),
 });
 
+export const publishHistory = sqliteTable('publish_history', {
+  id: id(),
+  userId: userId(),
+  projectId: text('project_id').references(() => projects.id, { onDelete: 'set null' }),
+  entryType: text('entry_type', {
+    enum: ['rule', 'skill', 'automation', 'validator', 'doc'],
+  }).notNull(),
+  entrySlug: text('entry_slug').notNull(),
+  targetRepoPath: text('target_repo_path').notNull(),
+  writtenPath: text('written_path').notNull(),
+  sourcePath: text('source_path').notNull(),
+  overwrote: integer('overwrote', { mode: 'boolean' }).notNull().default(false),
+  writtenBy: text('written_by'),
+  createdAt: createdAt(),
+});
+
 export const automationRuns = sqliteTable('automation_runs', {
   id: id(),
   userId: userId(),
@@ -307,3 +323,5 @@ export type Discovery = typeof discoveries.$inferSelect;
 export type NewDiscovery = typeof discoveries.$inferInsert;
 export type DiscoveryDraft = typeof discoveryDrafts.$inferSelect;
 export type NewDiscoveryDraft = typeof discoveryDrafts.$inferInsert;
+export type PublishHistoryRow = typeof publishHistory.$inferSelect;
+export type NewPublishHistoryRow = typeof publishHistory.$inferInsert;
