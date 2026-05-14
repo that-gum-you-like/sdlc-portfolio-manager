@@ -121,6 +121,19 @@
 - [ ] 14.2 First-run: create data dir, run migrations, seed library
 - [ ] 14.3 Health-check endpoint `GET /api/v1/health` returning version + db status
 
+## 14a. Relationships graph
+
+- [ ] 14a.1 Schema: `relationships` (`id`, `source_type`, `source_id`, `target_type`, `target_id`, `type`, `created_at`, `created_by`, `note`); composite unique index on `(source_type, source_id, target_type, target_id, type)` to prevent dup
+- [ ] 14a.2 Type enum implementation: `parent_of`, `blocks`, `depends_on`, `duplicates`, `related_to`, `predecessor_of`; inverse-pair table in code for read-time inversion
+- [ ] 14a.3 API: `POST /api/v1/relationships`, `DELETE /api/v1/relationships/:id`, `GET /api/v1/entities/:type/:id/relationships` (returns grouped by type with inverses + computed siblings)
+- [ ] 14a.4 Validator: reject self-relationships (source == target); reject cycles in `parent_of` (BFS/DFS check on insert)
+- [ ] 14a.5 Validator: deduplicate symmetric `related_to` on create (A→B same as B→A)
+- [ ] 14a.6 Sibling computation: union of (a) entities sharing a `parent_of` parent in relationships, (b) entities sharing canonical FK parent (work items with same `parent_id`, projects with same `portfolio_id`)
+- [ ] 14a.7 Containment FKs remain canonical — do not auto-insert `parent_of` rows for FK-based containment
+- [ ] 14a.8 UI: "Related" panel component shared across portfolio/project/work-item detail pages, with grouped sections + inline add-relationship form
+- [ ] 14a.9 UI: graph view component (use cytoscape.js, react-flow, or similar — pick one in design), depth selector 1/2/3
+- [ ] 14a.10 Tests: cycle detection across 3+ node paths; inverse rendering; sibling computation across both sources
+
 ## 14b. Validation pipeline
 
 - [ ] 14b.1 Schema: `validation_runs` (`id`, `work_item_id`, `project_id`, `gate`, `validator_entry_id`, `started_at`, `completed_at`, `status`, `exit_code`, `stdout_snippet`, `stderr_snippet`, `findings_json`)
@@ -140,6 +153,25 @@
 - [ ] 14b.15 UI: validation panel on item detail page with gate rows, last-run, "Run again" actions, expandable run detail
 - [ ] 14b.16 UI: board card gate-status indicator (four colored dots)
 - [ ] 14b.17 Tests: hung validator killed at timeout; failing gate blocks done; override records gate names; acceptance matcher matches by keyword
+
+## 14c. Discovery workflow
+
+- [ ] 14c.1 Schema: `discoveries` (`id`, `project_id`, `user_id`, `raw_dump`, `source`, `status`, `created_at`, `updated_at`, `accepted_at`)
+- [ ] 14c.2 Schema: `discovery_drafts` (`id`, `discovery_id`, `draft_type`, `draft_data` JSON, `parent_draft_id`, `relationship_drafts` JSON, `status`, `resulting_work_item_id`, `generated_by`, `created_at`, `updated_at`)
+- [ ] 14c.3 Add `source_discovery_id` FK to `work_items`
+- [ ] 14c.4 API: `POST /api/v1/discoveries`, `GET /api/v1/discoveries`, `GET /api/v1/discoveries/:id`, `PATCH /api/v1/discoveries/:id` (append to raw_dump), `POST /api/v1/discoveries/:id/generate`
+- [ ] 14c.5 API: `PATCH /api/v1/discoveries/:id/drafts/:draft_id` (edit draft_data inline), `POST /api/v1/discoveries/:id/drafts/:draft_id/accept`, `POST /api/v1/discoveries/:id/drafts/:draft_id/reject`
+- [ ] 14c.6 Generator dispatcher: maps `generator` param to a planning persona (bill-crouse / judy / barbara / april / default) — runs the seeded persona prompt against the raw_dump via Cursor automation; default = sequential pipeline
+- [ ] 14c.7 Accept logic: build resulting work item from `draft_data`, set `source_discovery_id`, set `parent_id` if `parent_draft_id` was previously accepted; on accept of both ends of a `relationship_drafts` entry, insert corresponding `relationships` row
+- [ ] 14c.8 HITL integration: planning persona's questions land in `/inbox` with the discovery as context; resume generation on answer
+- [ ] 14c.9 CLI: `pc discovery new`, `pc discovery generate <id> --persona <name>`, `pc discovery list --project <slug>`, `pc discovery show <id>`
+- [ ] 14c.10 UI: `/discoveries` list with status badges + draft counts
+- [ ] 14c.11 UI: `/discoveries/new` intake form (multiline textarea, source selector, generator picker, project picker if multi-project)
+- [ ] 14c.12 UI: `/discoveries/:id` review page — raw dump on left, drafts grouped by type on right, inline-edit, accept/reject, regenerate, append-to-dump
+- [ ] 14c.13 UI: live updates during generation (SSE or polling) — drafts appear as personas finish their passes
+- [ ] 14c.14 UI: dashboard "Recent Discoveries" section
+- [ ] 14c.15 Seed automation `cursor-templates/automations/discovery-default-pipeline.json`
+- [ ] 14c.16 Tests: accept-parent-then-children produces correct FK + relationships; regenerate marks pending drafts as superseded; HITL question pauses generation; voice-transcript source preserved
 
 ## 15. Human-in-the-loop (HITL) thread
 

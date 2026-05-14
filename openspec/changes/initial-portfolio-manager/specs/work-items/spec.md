@@ -62,6 +62,17 @@ The system SHALL allow zero or more string labels per work item for ad-hoc taggi
 - **WHEN** a client lists work items filtered by label `frontend`
 - **THEN** the system SHALL return only items whose label set contains `frontend`
 
+### Requirement: source_discovery_id link
+The system SHALL allow a work item to record `source_discovery_id` referencing the `discoveries` row whose accepted draft produced it. This FK is nullable (work items created directly without going through discovery have null).
+
+#### Scenario: Accepted draft produces a linked work item
+- **WHEN** a user accepts a draft from discovery D-123
+- **THEN** the resulting work item's `source_discovery_id` SHALL equal `D-123`
+
+#### Scenario: Manual work item has no source discovery
+- **WHEN** a user creates a work item directly from the board
+- **THEN** the resulting work item's `source_discovery_id` SHALL be null
+
 ### Requirement: Acceptance criteria
 The system SHALL allow a work item to carry an ordered array of acceptance criteria, each with a stable id (e.g., `AC-1`, `AC-2`), a text body, and an optional `evidence_refs` array linking to test names or evidence comments. Acceptance criteria are required for type `requirement` and optional for other types.
 

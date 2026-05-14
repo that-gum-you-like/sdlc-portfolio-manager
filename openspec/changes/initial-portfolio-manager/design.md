@@ -102,6 +102,30 @@ Cursor's Background Agents are the execution layer; this repo is the management 
 
 **Rationale**: The agentic-sdlc case studies (especially "6600 tests / 6 browser bugs") show that documented expectations get skipped under pressure; structural enforcement is the only mechanism that holds up. Four discrete gates parallel the four acceptance dimensions the user explicitly asked for ("quality, security, bugs, and validate it achieves the attached user story") and let each be enabled / overridden / replaced independently. Library-entry-as-validator means users can browse, edit, swap validators in the same UI as rules — no new admin surface. Override-with-reason preserves human judgment over false positives without weakening the default.
 
+### Decision 9c1: Relationships are a generic typed graph, not per-entity FKs
+
+**Chosen**: A single `relationships` table holds typed edges between any two entities (portfolio, project, work item) using `source_type` + `source_id` + `target_type` + `target_id` + `type`. Containment FKs remain the canonical hierarchy; the relationships table adds the non-canonical web.
+
+**Considered**: Per-relationship-type tables (`blocks`, `depends_on`, etc.); reusing only FKs and extending them to nullable cross-entity FKs; ORM-managed many-to-many associations per type.
+
+**Rationale**: Per-type tables explode by N × M (six types × three entity types = 18 tables that all look the same). One polymorphic table is queryable as a graph in a single SQL union. The "is this stored or computed?" rule — store the directional side, compute the inverse — keeps the table small and avoids drift between an `A blocks B` row and a stale `B blocked_by A` row. The decision to keep containment FKs (not store containment as `parent_of` rows) avoids dual sources of truth — pulling all children of a project remains a fast `WHERE project_id = ?` query.
+
+### Decision 9c2: Discovery is its own workflow, not just "create an epic"
+
+**Chosen**: A separate `discoveries` + `discovery_drafts` data model and `/discoveries/:id` review surface. Generation is async, async-pluggable per persona (Bill Crouse / Judy / Barbara / April), and accepted drafts produce real work items wired to a `source_discovery_id` FK and the relationships table.
+
+**Considered**: Treating a "discovery" as an `epic`-type work item with notes; running planning generation inline at work-item-create time; making the user manually write all stories.
+
+**Rationale**: The user explicitly recalled the agentic-sdlc concept where the user talks out loud and the system develops user stories with acceptance criteria. That is a *generative* workflow with a review step in the middle — fundamentally different from "fill in a form to create one work item." Drafts must be reviewable, editable, and rejectable without polluting the real work-item table; a discovery groups them; the source_discovery_id back-link preserves provenance. Async generation matches that planning personas are LLM-driven and slow (seconds to minutes per pass). The four-persona sequential pipeline (Bill: requirements, Judy: scoring, Barbara: stories, April: parallelization) directly maps the agentic-sdlc planning flow into this surface.
+
+### Decision 9c3: Discovery generation is async with HITL fallback when ambiguous
+
+**Chosen**: Triggering generation sets `status: generating` and returns immediately. Personas produce drafts incrementally; if any persona encounters ambiguity, it files a question via the existing HITL mechanism (with the discovery as the source entity) and pauses; on answer, generation resumes.
+
+**Considered**: Sync block until done; let personas make assumptions silently; ban HITL during generation and force best-effort guesses.
+
+**Rationale**: Generation is too slow for sync UX, and ambiguity is the rule with braindumps, not the exception. Hooking HITL into generation gives the personas a way to ask "should this be one story or three?" instead of guessing, which is exactly the high-leverage moment in early discovery. Reusing the HITL plumbing built earlier in this change means no new notification or inbox surface.
+
 ### Decision 9b: HITL is async by default, with optional blocking wait
 
 **Chosen**: `pc ask` returns immediately by default (fire-and-forget); agents that want to block call `pc ask --wait <seconds>` or `pc check-answer <id>`. The portfolio manager does not push answers to running agent processes — the agent decides whether to wait, poll, or pick up answers on its next `pc next` invocation.

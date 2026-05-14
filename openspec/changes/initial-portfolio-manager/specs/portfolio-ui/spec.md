@@ -71,6 +71,31 @@ The item detail page SHALL render any open and recently-answered questions as a 
 - **WHEN** a user opens an item with two open questions and four comments
 - **THEN** the system SHALL render the two questions in a "Pending questions" section at the top with answer forms, and the four comments in the standard comments thread below
 
+### Requirement: Related panel on every entity detail page
+The system SHALL render a "Related" panel on portfolio, project, and work-item detail pages showing relationships grouped by type (Parent, Children, Blocks, Blocked by, Depends on, Required by, Duplicates, Related, Predecessors, Successors, Siblings) with inline "Add relationship" controls.
+
+#### Scenario: Add a relationship from the panel
+- **WHEN** a user clicks "Add relationship", selects entity B and type `blocks`, and confirms
+- **THEN** the system SHALL POST to the relationships API and re-render the panel with B under "Blocks"
+
+### Requirement: Graph view per entity
+The system SHALL provide a graph visualization on each entity detail page showing the entity centered with relationships rendered as edges to adjacent entities, depth configurable to 1, 2, or 3 hops.
+
+#### Scenario: View 2-hop graph
+- **WHEN** a user clicks "Graph view" on a work item with three direct relationships
+- **THEN** the system SHALL render the work item centered with three first-hop nodes and any second-hop nodes; clicking a node SHALL navigate to that entity's detail page
+
+### Requirement: Discovery intake + review UI
+The system SHALL provide `/discoveries` (list view per project), `/discoveries/new` (intake form with multiline textarea, generator picker, source selector), and `/discoveries/:id` (raw dump + generated drafts panel with inline-edit, accept, reject, regenerate actions).
+
+#### Scenario: Submit a braindump
+- **WHEN** a user opens `/discoveries/new`, types or pastes content, selects generator "default", and submits
+- **THEN** the system SHALL create the discovery, kick off generation, and navigate to `/discoveries/:id` showing a loading state until drafts arrive
+
+#### Scenario: Accept a draft inline
+- **WHEN** a user edits a draft story's acceptance criteria and clicks Accept
+- **THEN** the system SHALL persist the edits, accept the draft, create the work item, and re-render the row showing the new work item id and a link to its detail page
+
 ### Requirement: Mentions render as interactive links
 The system SHALL render `@<name>` mentions in comment and question bodies as clickable links to the mentioned user's or agent's detail page, and SHALL visually distinguish them from plain text.
 
