@@ -1,0 +1,107 @@
+## 1. Monorepo + toolchain
+
+- [ ] 1.1 Add root `package.json` with workspaces (`apps/*`, `packages/*`) and `engines.node >= 22`
+- [ ] 1.2 Add `pnpm-workspace.yaml` or npm workspaces config; choose package manager
+- [ ] 1.3 Configure shared TypeScript base config (`tsconfig.base.json`) and per-package extends
+- [ ] 1.4 Add ESLint + Prettier configs at root; wire into each workspace
+- [ ] 1.5 Add `vitest` config at root for shared test setup
+
+## 2. Database layer (`apps/portfolio/src/db/`)
+
+- [ ] 2.1 Install `better-sqlite3`, `drizzle-orm`, `drizzle-kit`
+- [ ] 2.2 Define Drizzle schema: `work_items`, `comments`, `labels`, `work_item_labels`, `library_entries`, `publish_history`, `_migrations`
+- [ ] 2.3 Add `user_id` column with default `local-user` on every user-owned table
+- [ ] 2.4 Configure UUIDv4 default for all `id` columns
+- [ ] 2.5 Write migration 0001 (initial schema) and migration runner that records to `_migrations`
+- [ ] 2.6 Add `auth.ts` with `currentUser()` returning constant `local-user` in single-user mode
+- [ ] 2.7 Integration test: insert + read survives process restart, `user_id` always populated
+
+## 3. Work-items API (`apps/portfolio/src/app/api/v1/work-items/`)
+
+- [ ] 3.1 `GET /api/v1/work-items` with filters: `status`, `type`, `assignee`, `label`, `parent_id`
+- [ ] 3.2 `POST /api/v1/work-items` — create with type, title, description, parent_id (optional), labels, assignee
+- [ ] 3.3 `GET /api/v1/work-items/:id` — single item with parent + children embedded
+- [ ] 3.4 `PATCH /api/v1/work-items/:id` — partial update, validate status transitions
+- [ ] 3.5 `POST /api/v1/work-items/:id/claim` — atomic claim transitioning ready → in_progress
+- [ ] 3.6 Cycle detection on parent assignment (self + descendant rejection)
+- [ ] 3.7 Standard error contract: `{ error, message, details }` with appropriate HTTP codes
+- [ ] 3.8 Integration tests: each scenario in `specs/work-items/spec.md` becomes a test
+
+## 4. Comments API
+
+- [ ] 4.1 `POST /api/v1/work-items/:id/comments` — append comment with author + markdown body
+- [ ] 4.2 `GET /api/v1/work-items/:id/comments` — chronological listing
+- [ ] 4.3 Integration test: comment from agent author persists with timestamp
+
+## 5. Portfolio UI — board
+
+- [ ] 5.1 `/board` route rendering five columns (`backlog`, `ready`, `in_progress`, `in_review`, `done`)
+- [ ] 5.2 Card component showing type icon, title, assignee, labels
+- [ ] 5.3 Drag-and-drop between columns triggering PATCH; optimistic update + rollback on error
+- [ ] 5.4 Filter bar: by label, assignee, type
+- [ ] 5.5 "New item" modal posting to API
+
+## 6. Portfolio UI — backlog
+
+- [ ] 6.1 `/backlog` route rendering ordered list of `backlog` + `ready` items
+- [ ] 6.2 Rank field on work items; drag-to-reorder persists new rank
+- [ ] 6.3 Bulk "move to ready" action
+
+## 7. Portfolio UI — item detail
+
+- [ ] 7.1 `/items/[id]` route showing all fields, parent link, children list
+- [ ] 7.2 Inline edit for title, description (markdown), labels, assignee
+- [ ] 7.3 Comments thread with markdown rendering + new-comment form
+- [ ] 7.4 Status transition controls scoped to allowed next states
+
+## 8. Skills & rules library — storage
+
+- [ ] 8.1 `data/library/<type>/<slug>.mdc` file layout under user data dir
+- [ ] 8.2 Frontmatter parser/validator (`gray-matter` + `zod` schema for known fields)
+- [ ] 8.3 Library index in SQLite rebuilt from filesystem at startup + on save
+- [ ] 8.4 Seed initial library from `cursor-templates/` on first run
+
+## 9. Skills & rules library — UI
+
+- [ ] 9.1 `/library` route browsing entries with name, description, tags
+- [ ] 9.2 `/library/[slug]` route with markdown body editor + structured frontmatter form
+- [ ] 9.3 Save action: validate frontmatter as YAML, persist file, refresh index
+- [ ] 9.4 "New rule" / "New skill" actions starting from template
+- [ ] 9.5 Inline validation errors that prevent save without losing edits
+
+## 10. Skills & rules library — publish
+
+- [ ] 10.1 "Publish to repo" modal: select target repo path, select entries, preview file writes
+- [ ] 10.2 Detect overwrites and require per-file confirmation
+- [ ] 10.3 Write `.mdc` files into target's `.cursor/rules/` or `.cursor/skills/`
+- [ ] 10.4 Record publish event in `publish_history` (entry id, target path, timestamp)
+- [ ] 10.5 Publish-history panel on entry detail view
+
+## 11. `pc` CLI (`packages/cli/`)
+
+- [ ] 11.1 CLI scaffold using `commander` or `citty`; binary registered as `pc`
+- [ ] 11.2 `pc next --agent <name>` — claim next ready task, print parseable summary
+- [ ] 11.3 `pc done <id>` — set status to in_review
+- [ ] 11.4 `pc comment <id> <message>` — post comment (stdin supported for long bodies)
+- [ ] 11.5 `pc file <type> <title>` — create work item, print new id
+- [ ] 11.6 Config: `PC_API_URL` env var, default `http://localhost:3737`
+- [ ] 11.7 Exit codes documented; `pc next` exits 2 on no-ready-work
+
+## 12. Seed Cursor rules in `cursor-templates/`
+
+- [ ] 12.1 `cursor-templates/rules/agent-protocol.mdc` — teaches agent to call `pc next`, work the task, `pc done`
+- [ ] 12.2 `cursor-templates/rules/work-item-discipline.mdc` — file new bugs/follow-ups as work items, not as TODO comments
+- [ ] 12.3 `cursor-templates/skills/<seed-skill>/` — at least one example skill, with SKILL.md + scripts if needed (pending confirmation of Cursor skill format)
+
+## 13. Docs
+
+- [ ] 13.1 `docs/getting-started.md` — install, run, connect Cursor
+- [ ] 13.2 `docs/agent-protocol.md` — how Cursor agents interact with the system
+- [ ] 13.3 `docs/multi-user-roadmap.md` — what changes when we switch off single-user mode
+- [ ] 13.4 Top-level `README.md` updated to point at all of the above
+
+## 14. Local dev experience
+
+- [ ] 14.1 `npm run dev` starts Next.js on `:3737` and watches CLI build
+- [ ] 14.2 First-run: create data dir, run migrations, seed library
+- [ ] 14.3 Health-check endpoint `GET /api/v1/health` returning version + db status
