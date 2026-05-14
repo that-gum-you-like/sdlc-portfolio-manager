@@ -3,14 +3,9 @@ import { existsSync } from 'node:fs';
 import { z } from 'zod';
 
 import { findLibraryEntry, listLibraryEntries } from './library';
+import { VALIDATION_GATES, type ValidationGate } from './validation-gates';
 
-export const VALIDATION_GATES = [
-  'quality',
-  'security',
-  'bugs',
-  'user-story-acceptance',
-] as const;
-export type ValidationGate = (typeof VALIDATION_GATES)[number];
+export { VALIDATION_GATES, type ValidationGate };
 
 export const ValidatorFrontmatter = z.object({
   gate: z.enum(VALIDATION_GATES),

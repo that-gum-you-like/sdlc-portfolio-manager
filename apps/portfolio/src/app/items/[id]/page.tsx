@@ -97,11 +97,17 @@ export default async function ItemDetailPage({ params }: Params) {
     <main>
       <TopNav />
       <nav className="muted" aria-label="Breadcrumb" style={{ fontSize: 13, marginBottom: 8 }}>
-        {portfolio ? <Link href={`/`}>{portfolio.name}</Link> : null}
+        <Link href="/portfolios">Portfolios</Link>
+        {portfolio ? (
+          <>
+            {' › '}
+            <Link href={`/portfolios/${portfolio.id}`}>{portfolio.name}</Link>
+          </>
+        ) : null}
         {project ? (
           <>
             {' › '}
-            <Link href={`/board`}>{project.name}</Link>
+            <Link href={`/projects/${project.slug}`}>{project.name}</Link>
           </>
         ) : null}
         {' › '}

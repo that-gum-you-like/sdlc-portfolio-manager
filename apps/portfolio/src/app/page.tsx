@@ -23,47 +23,73 @@ export default async function HomePage() {
       <TopNav active="home" />
       <h1>sdlc-portfolio-manager</h1>
       <p className="muted">
-        Local portfolio + work-item + library manager. Pre-alpha — see{' '}
-        <code>openspec/changes/initial-portfolio-manager/</code> for the spec.
+        Local portfolio + work-item + library manager. Start by picking a project below — or{' '}
+        <Link href="/portfolios/new">create a new portfolio</Link> to group projects.
       </p>
 
-      <h2>Portfolios</h2>
-      {portfolioRows.length === 0 ? (
-        <div className="empty-state">No portfolios yet. The first-run seed will create one on next request.</div>
-      ) : (
-        portfolioRows.map((p) => {
-          const projectsInPortfolio = projectRows.filter((proj) => proj.portfolioId === p.id);
-          return (
-            <article key={p.id} className="card">
-              <h3>{p.name}</h3>
-              {p.description ? <p>{p.description}</p> : null}
-              <p className="muted">
-                {projectsInPortfolio.length} project{projectsInPortfolio.length === 1 ? '' : 's'}
-              </p>
-              <ul>
-                {projectsInPortfolio.map((proj) => {
-                  const projectItems = itemRows.filter((i) => i.projectId === proj.id);
-                  return (
-                    <li key={proj.id}>
-                      <Link href={`/api/v1/projects/${proj.slug}`}>{proj.name}</Link>{' '}
-                      <span className="muted">
-                        — {projectItems.length} work item{projectItems.length === 1 ? '' : 's'}
-                      </span>
-                    </li>
-                  );
-                })}
-              </ul>
-            </article>
-          );
-        })
-      )}
+      <div className="dashboard-grid" style={{ marginTop: 24 }}>
+        <section>
+          <h2>Start here</h2>
+          <ul>
+            <li>
+              <Link href="/portfolios">Portfolios &amp; projects</Link>
+              <div className="item-meta">create or open a project</div>
+            </li>
+            <li>
+              <Link href="/discoveries/new">Start a discovery</Link>
+              <div className="item-meta">braindump → user stories</div>
+            </li>
+            <li>
+              <Link href="/dashboard">Dashboard</Link>
+              <div className="item-meta">today&apos;s focus across all projects</div>
+            </li>
+            <li>
+              <Link href="/inbox">Inbox</Link>
+              <div className="item-meta">questions and mentions for you</div>
+            </li>
+          </ul>
+        </section>
 
-      <h2>Status</h2>
-      <p className="muted">
-        Backend, database, and the portfolio + project + work-item schema are live. UI for the
-        board, backlog, item detail, library, and discovery flows is next — tracked in{' '}
-        <code>openspec/changes/initial-portfolio-manager/tasks.md</code>.
-      </p>
+        <section>
+          <h2>Projects</h2>
+          {portfolioRows.length === 0 ? (
+            <p className="empty">
+              No portfolios yet.{' '}
+              <Link href="/portfolios/new">Create one</Link> to start.
+            </p>
+          ) : (
+            portfolioRows.map((p) => {
+              const projs = projectRows.filter((proj) => proj.portfolioId === p.id);
+              return (
+                <div key={p.id} style={{ marginBottom: 12 }}>
+                  <h3 style={{ margin: '0 0 4px 0' }}>
+                    <Link href={`/portfolios/${p.id}`}>{p.name}</Link>
+                  </h3>
+                  {projs.length === 0 ? (
+                    <p className="muted" style={{ fontSize: 13 }}>
+                      <Link href={`/projects/new?portfolioId=${p.id}`}>+ Add a project</Link>
+                    </p>
+                  ) : (
+                    <ul>
+                      {projs.map((proj) => {
+                        const count = itemRows.filter((i) => i.projectId === proj.id).length;
+                        return (
+                          <li key={proj.id}>
+                            <Link href={`/projects/${proj.slug}`}>{proj.name}</Link>{' '}
+                            <span className="muted" style={{ fontSize: 12 }}>
+                              {count} item{count === 1 ? '' : 's'}
+                            </span>
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  )}
+                </div>
+              );
+            })
+          )}
+        </section>
+      </div>
     </main>
   );
 }

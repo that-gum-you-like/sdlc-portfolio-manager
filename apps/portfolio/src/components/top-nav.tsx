@@ -4,6 +4,7 @@ interface TopNavProps {
   active?:
     | 'home'
     | 'dashboard'
+    | 'portfolios'
     | 'board'
     | 'backlog'
     | 'automations'
@@ -17,6 +18,9 @@ export function TopNav({ active }: TopNavProps) {
     <nav className="top-nav">
       <Link href="/" className={['brand', active === 'home' ? 'active' : ''].join(' ')}>
         sdlc-portfolio-manager
+      </Link>
+      <Link href="/portfolios" className={active === 'portfolios' ? 'active' : ''}>
+        Portfolios
       </Link>
       <Link href="/dashboard" className={active === 'dashboard' ? 'active' : ''}>
         Dashboard
