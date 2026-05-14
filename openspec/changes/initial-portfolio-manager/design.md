@@ -66,6 +66,32 @@ Cursor's Background Agents are the execution layer; this repo is the management 
 
 **Rationale**: A copy is what Cursor expects to find; symlinks break in repos shared across machines; packaging is over-engineering for a single-user MVP. The publish-history record gives us "this rule needs updating in 3 repos" callouts later without symlinks.
 
+### Decision 6: Cursor Automations is the execution runtime for scheduled + auto-pickup work
+
+**Chosen**: Cursor Automations (cron-scheduled prompts and event-triggered Background Agent runs configured in Cursor) drive (a) scheduled bug reviews, (b) scheduled security reviews, and (c) auto-pickup of items moved to `ready` in the manager UI. The portfolio manager exposes a stable contract endpoint (`GET /api/v1/work-items/next-ready` returning either an item to work or a 204) and stores automation definitions in the library so they can be edited in-UI and published into a target repo as `.cursor/automations/*.json` (or whatever Cursor's on-disk format is — confirm before locking).
+
+**Considered**: Polling from a long-running local daemon; webhook out from the portfolio manager into Cursor's API; manual `pc next` invocation only.
+
+**Rationale**: Cursor Automations is the user's available approved primitive at work, runs in Cursor's already-approved cloud sandbox, and removes the need for any local daemon or webhook plumbing. Manual `pc next` from a foreground agent remains supported (and is what humans / debug runs use), but Automations is what makes the system actually unattended. Modeling automation definitions as library entries means the same browse/edit/publish flow already specified for rules/skills also applies to automations — no new UI primitive.
+
+### Decision 7: Default port `3737`
+
+**Chosen**: Local server listens on `127.0.0.1:3737` by default. Configurable via `PORT` env var.
+
+**Rationale**: Low collision (Next.js default is 3000, Vite is 5173, common dev tools cluster around 3000-3010), easy to remember (sdlc → 3737), four digits.
+
+### Decision 8: Seed library ships with the IT-Crowd personas from `agentic-sdlc`
+
+**Chosen**: The 16 execution-agent templates (Roy, Moss, Jen, Richmond, Denholm, Douglas, etc.) plus the 3 framework agents from `~/agentic-sdlc/agents/templates/execution-agents/` are ported into the seed library as `.cursor/rules/*.mdc` entries. Users can delete, edit, or fork them.
+
+**Rationale**: Feature parity with the existing framework is a stated goal; opinionated seeds make first-run useful instead of empty. Persona content port lives in the follow-on `agentic-sdlc-framework-port` change.
+
+### Decision 9: Cursor skills format = `.cursor/skills/<name>/SKILL.md`
+
+**Chosen**: Skills are folders with a `SKILL.md` containing YAML frontmatter + markdown body, matching the convention OpenSpec installed under `.cursor/skills/` at init.
+
+**Rationale**: This is what Cursor produced when OpenSpec scaffolded skills, so it's the live convention. Schema parity with Claude Code's skill format is an accidental win — same content can serve both clients if we ever care.
+
 ## Risks / Trade-offs
 
 | Risk | Mitigation |
@@ -82,7 +108,5 @@ No data migration — this is greenfield. Deployment is `npm install && npm run 
 
 ## Open Questions
 
-- Port number convention for local dev (default `3737`?)
-- Should the library ship with the IT-Crowd agent personas (Roy, Moss, Jen, etc.) from agentic-sdlc as seed entries, or stay neutral?
-- Cursor "skills" vs "rules": the OpenSpec install created `.cursor/skills/` and `.cursor/commands/`, so Cursor does have a skills primitive — confirm exact format before the library editor commits to a schema
-- Where does the desktop launcher / "is the server running?" indicator live? Tray icon out of scope, but `npm run dev` is the only entry point at MVP — okay?
+- Cursor Automations on-disk format — confirm whether automation defs live under `.cursor/automations/*.json` (or wherever Cursor actually writes them) before the publish path writes files. Implementation task 15.1 includes verification.
+- Desktop launcher / "is the server running?" indicator — `npm run dev` is the only entry point at MVP. Tray icon, autostart on login, etc. are backlog.

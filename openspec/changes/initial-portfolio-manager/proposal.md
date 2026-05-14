@@ -11,6 +11,7 @@ The user has Cursor at work but lacks an Azure-DevOps-style portfolio/work-item 
 - **NEW** `pc` CLI in `packages/cli/` invoked by Cursor agents via `.cursor/rules/*.mdc` to pick up work, update status, file new items
 - **NEW** Seed `.cursor/rules/` templates in `cursor-templates/` that wire Cursor Background Agents into the protocol
 - **NEW** Data model uses UUIDs and `user_id` scoping from day one; auth stubbed to a `local-user` constant so multi-user is a stub-swap, not a rewrite
+- **NEW** Cursor Automations integration: the portfolio manager exposes endpoints for Cursor Automations to (a) auto-claim work items moved to `ready` and (b) trigger scheduled prompts (recurring bug reviews, security reviews). Automation definitions are stored in the library so the user can manage them in-UI.
 
 ## Capabilities
 
@@ -21,6 +22,7 @@ The user has Cursor at work but lacks an Azure-DevOps-style portfolio/work-item 
 - `skills-rules-library`: Curated library of Cursor rules and skills — browse, edit with frontmatter validation, publish into target repo's `.cursor/` directory
 - `agent-protocol`: REST API contract + `pc` CLI used by Cursor agents to discover, claim, update, and file work items
 - `local-persistence`: SQLite schema, migrations, and identity model designed single-user-first / multi-user-ready
+- `cursor-automations`: First-class integration with Cursor Automations — endpoint contract for "give me the next ready item," scheduled prompts (bug/security review crons) defined in-library and registered with Cursor, and a UI surface for managing automation definitions
 
 ### Modified Capabilities
 

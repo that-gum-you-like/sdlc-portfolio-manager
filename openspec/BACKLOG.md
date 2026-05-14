@@ -70,3 +70,34 @@ Parking-lot for ideas, future capabilities, and stretch features. Items here are
 - Performance budget per route
 - Telemetry (local-only, no third party)
 - Crash reporting (local-only)
+
+---
+
+## Explicitly deferred from agentic-sdlc parity (Cursor handles or scope-out)
+
+The following exist in `~/agentic-sdlc/` and are **not** being ported to `sdlc-portfolio-manager`. Reasons noted per item.
+
+### Handled by Cursor itself
+- **LLM adapter system** (anthropic, azure-foundry, azure-openai, openai, gemini, groq, cerebras, ollama) — Cursor selects the model
+- **Model intelligence database / cost-aware routing / predictive model swaps / fallback chains** — Cursor handles
+- **Voice intake** (Groq Whisper, voice-intake.sh, voice-config.json) — Cursor has dictation
+- **Token-level cost tracking** (`cost-tracker.mjs`) — Cursor bills directly; we only see work-item-level outcomes
+
+### Scope-out for portfolio manager
+- **Matrix protocol communication** (`matrix-client/matrix-cli.mjs`) — out of scope for a portfolio manager
+- **WhatsApp ↔ OpenClaw bridge** (`mailbox-sync.mjs`) — out of scope; Bryce's personal setup
+- **Paperclip orchestration adapter** (`paperclip.mjs`, `paperclip-sync.mjs`) — sister product, not absorbed
+- **Setup wizard for new target repos** (`setup.mjs` 37K-line interactive scaffolder) — publish-to-repo flow covers the MVP need
+- **Autonomous launcher** (`autonomous-launcher.sh`) — Claude-Code-specific
+
+### Deferred to follow-up (post-MVP) openspec changes
+- **Pattern hunt** (`pattern-hunt.mjs`) — review-comment clustering, defeat-test proposals. High value but needs ML infra (sentence-transformers embeddings); revisit after MVP usage
+- **Inter-agent schema validator** (`schema-validator.mjs`) — JSON Schema validation of inter-agent data contracts; defer until multi-agent contracts emerge
+- **Agent prompt version snapshots** (`version-snapshot.mjs`) — full evolution history of AGENT.md changes; backlog until library has version history capability
+- **AST anti-pattern scanner** (`four-layer-validate.mjs`, `ast-analyzer.mjs`) — defer; project-side concern, not portfolio-manager concern
+- **Behavior testing harness** (`test-behavior.mjs`) — agent prompt quality / maturation regression tests; revisit when persona authoring becomes routine
+- **Migrate-memory tool** (`migrate-memory.mjs`) — needed once persona prompt schemas evolve; build when needed
+- **Semantic memory index** (`semantic-index.mjs`, `embed.py`) — vector search over memory; defer until memory volume justifies it
+- **Roadmap gardening** (`garden-roadmap.mjs`) — auto-archive completed roadmap items; trivial to add post-MVP
+- **Wellness checks / human ergonomics** — session hours, wellness mailbox commands; backlog
+- **PM model performance JSONL** — token-level decision log; backlog (depends on cost-tracker which is out of scope)

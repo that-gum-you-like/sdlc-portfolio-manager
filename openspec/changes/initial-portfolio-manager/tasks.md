@@ -105,3 +105,17 @@
 - [ ] 14.1 `npm run dev` starts Next.js on `:3737` and watches CLI build
 - [ ] 14.2 First-run: create data dir, run migrations, seed library
 - [ ] 14.3 Health-check endpoint `GET /api/v1/health` returning version + db status
+
+## 15. Cursor Automations integration
+
+- [ ] 15.1 Confirm Cursor Automations on-disk format (consult Cursor docs); document the file path + JSON schema before locking the publish writer
+- [ ] 15.2 Extend `library_entries.type` enum to include `automation` alongside `rule` and `skill`
+- [ ] 15.3 Automation frontmatter schema: `prompt` (markdown), `cron` (string), `scope` (repo/labels/globs), `resultHook` (enum: `file-findings-as-bugs` | `comment-only` | `custom`)
+- [ ] 15.4 Cron expression validation in the editor + on save
+- [ ] 15.5 `GET /api/v1/work-items/next-ready` with atomic claim semantics (see specs/cursor-automations)
+- [ ] 15.6 `POST /api/v1/automation-results` accepting comments + new work items linked to a parent
+- [ ] 15.7 `automation_runs` table: `id`, `automation_entry_id`, `started_at`, `completed_at`, `status`, `summary`, `created_item_ids`
+- [ ] 15.8 Publish flow extension: emit Cursor Automation file(s) into target repo and record `publish_history` row
+- [ ] 15.9 Automation-detail page: prompt, cron next-fires, run history list, manual "run now" trigger (sends the prompt to Cursor via documented mechanism — TBD in 15.1)
+- [ ] 15.10 Seed two automations in `cursor-templates/`: `weekly-security-review` and `weekly-bug-triage`
+- [ ] 15.11 Concurrency test: two `next-ready` calls vs one ready item — exactly one wins
