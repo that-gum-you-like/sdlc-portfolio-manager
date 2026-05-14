@@ -69,7 +69,31 @@ UI decisions follow eight principles in `docs/design-principles.md` — drawn fr
 
 ## Getting started
 
-Not yet runnable. Implementation tracked in `openspec/changes/initial-portfolio-manager/tasks.md`.
+```bash
+pnpm install
+pnpm rebuild better-sqlite3   # one-time: builds the native SQLite binding
+pnpm dev                       # starts Next.js on http://localhost:3737
+```
+
+First request runs migrations and seeds the `personal` portfolio + `general` project automatically. Data lives at `~/.sdlc-portfolio-manager/data.sqlite` (override with `SDLC_DATA_DIR`).
+
+### Running tests
+
+```bash
+pnpm test         # vitest, one shot
+pnpm test:watch
+```
+
+### Current status
+
+| Section | State |
+|---------|-------|
+| 1. Monorepo + toolchain | ✅ |
+| 2. Database layer (schema, migrations, auth) | ✅ partial — foundational tables (portfolios, projects, work_items, comments, library_entries, relationships, \_migrations) |
+| 3. Portfolio + project hierarchy API | ✅ CRUD + first-run seed + health endpoint |
+| 4–21 | tracked in `openspec/changes/initial-portfolio-manager/tasks.md` |
+
+Implementation tracked task-by-task in `openspec/changes/initial-portfolio-manager/tasks.md`.
 
 ## License
 

@@ -28,3 +28,19 @@ Thumbs.db
 
 coverage/
 .nyc_output/
+
+# Next.js
+.next/
+out/
+
+# Build artifacts
+*.tsbuildinfo
+
+# Drizzle
+drizzle/
+
+# pnpm
+.pnpm-debug.log*
+
+# OS
+.DS_Store
