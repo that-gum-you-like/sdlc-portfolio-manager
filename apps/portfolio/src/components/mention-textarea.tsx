@@ -56,11 +56,14 @@ export function MentionTextarea({
   const [selected, setSelected] = useState(0);
   const [query, setQuery] = useState('');
   const [atIndex, setAtIndex] = useState<number | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [fetchedQuery, setFetchedQuery] = useState<string | null>(null);
 
   // Refresh suggestions when the query changes
   useEffect(() => {
     if (!open) return;
     let cancelled = false;
+    setLoading(true);
     const url = `/api/v1/mentions/suggestions${query ? `?q=${encodeURIComponent(query)}` : ''}`;
     fetch(url)
       .then((r) => r.json())
@@ -68,10 +71,16 @@ export function MentionTextarea({
         if (!cancelled) {
           setSuggestions(data.suggestions ?? []);
           setSelected(0);
+          setLoading(false);
+          setFetchedQuery(query);
         }
       })
       .catch(() => {
-        if (!cancelled) setSuggestions([]);
+        if (!cancelled) {
+          setSuggestions([]);
+          setLoading(false);
+          setFetchedQuery(query);
+        }
       });
     return () => {
       cancelled = true;
@@ -165,32 +174,37 @@ export function MentionTextarea({
           setTimeout(() => setOpen(false), 150);
         }}
       />
-      {open && suggestions.length > 0 ? (
-        <ul className="mention-popover" role="listbox" aria-label="Mention suggestions">
-          {suggestions.map((s, idx) => (
-            <li
-              key={`${s.kind}:${s.handle}`}
-              role="option"
-              aria-selected={idx === selected}
-              className={idx === selected ? 'selected' : ''}
-              onMouseDown={(e) => {
-                e.preventDefault();
-                insertSuggestion(s);
-              }}
-            >
-              <span className="mention-handle">@{s.handle}</span>
-              <span className="mention-kind">{s.kind}</span>
-              <span className="mention-reason">{s.reason}</span>
-            </li>
-          ))}
-        </ul>
-      ) : null}
-      {open && suggestions.length === 0 ? (
-        <div className="mention-popover empty">
-          <span className="muted">
-            no match{query ? ` for “${query}”` : ''} — keep typing to mention a new handle
-          </span>
-        </div>
+      {open ? (
+        suggestions.length > 0 ? (
+          <ul className="mention-popover" role="listbox" aria-label="Mention suggestions">
+            {suggestions.map((s, idx) => (
+              <li
+                key={`${s.kind}:${s.handle}`}
+                role="option"
+                aria-selected={idx === selected}
+                className={idx === selected ? 'selected' : ''}
+                onMouseDown={(e) => {
+                  e.preventDefault();
+                  insertSuggestion(s);
+                }}
+              >
+                <span className="mention-handle">@{s.handle}</span>
+                <span className="mention-kind">{s.kind}</span>
+                <span className="mention-reason">{s.reason}</span>
+              </li>
+            ))}
+          </ul>
+        ) : loading || fetchedQuery !== query ? (
+          <div className="mention-popover empty">
+            <span className="muted">Loading…</span>
+          </div>
+        ) : (
+          <div className="mention-popover empty">
+            <span className="muted">
+              No match{query ? ` for “${query}”` : ''} — keep typing to mention a new handle
+            </span>
+          </div>
+        )
       ) : null}
     </div>
   );
