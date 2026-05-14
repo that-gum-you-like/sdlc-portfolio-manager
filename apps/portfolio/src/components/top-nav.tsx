@@ -1,7 +1,7 @@
 import Link from 'next/link';
 
 interface TopNavProps {
-  active?: 'home' | 'board' | 'backlog' | 'library' | 'discoveries' | 'inbox';
+  active?: 'home' | 'board' | 'backlog' | 'automations' | 'library' | 'discoveries' | 'inbox';
 }
 
 export function TopNav({ active }: TopNavProps) {
@@ -16,11 +16,14 @@ export function TopNav({ active }: TopNavProps) {
       <Link href="/backlog" className={active === 'backlog' ? 'active' : ''}>
         Backlog
       </Link>
-      <Link href="/library" className={active === 'library' ? 'active' : ''}>
-        Library
-      </Link>
       <Link href="/discoveries" className={active === 'discoveries' ? 'active' : ''}>
         Discoveries
+      </Link>
+      <Link href="/automations" className={active === 'automations' ? 'active' : ''}>
+        Automations
+      </Link>
+      <Link href="/library" className={active === 'library' ? 'active' : ''}>
+        Library
       </Link>
       <Link href="/inbox" className={active === 'inbox' ? 'active' : ''}>
         Inbox

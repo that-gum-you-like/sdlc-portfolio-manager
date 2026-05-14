@@ -200,6 +200,67 @@ export const evidenceLinks = sqliteTable('evidence_links', {
   createdAt: createdAt(),
 });
 
+export const discoveries = sqliteTable('discoveries', {
+  id: id(),
+  userId: userId(),
+  projectId: text('project_id')
+    .notNull()
+    .references(() => projects.id, { onDelete: 'cascade' }),
+  rawDump: text('raw_dump').notNull(),
+  source: text('source', {
+    enum: ['text', 'voice-transcript', 'meeting-notes', 'email'],
+  })
+    .notNull()
+    .default('text'),
+  status: text('status', {
+    enum: ['draft', 'generating', 'reviewing', 'accepted', 'archived'],
+  })
+    .notNull()
+    .default('draft'),
+  generationRequested: integer('generation_requested', { mode: 'boolean' })
+    .notNull()
+    .default(false),
+  createdAt: createdAt(),
+  updatedAt: updatedAt(),
+  acceptedAt: text('accepted_at'),
+});
+
+export const discoveryDrafts = sqliteTable('discovery_drafts', {
+  id: id(),
+  userId: userId(),
+  discoveryId: text('discovery_id')
+    .notNull()
+    .references(() => discoveries.id, { onDelete: 'cascade' }),
+  draftType: text('draft_type', {
+    enum: [
+      'epic',
+      'story',
+      'task',
+      'bug',
+      'requirement',
+      'roadmap-item',
+      'parallelization-stream',
+      'devlog-entry',
+    ],
+  }).notNull(),
+  draftData: text('draft_data')
+    .notNull()
+    .default(sql`'{}'`),
+  parentDraftId: text('parent_draft_id'),
+  relationshipDrafts: text('relationship_drafts')
+    .notNull()
+    .default(sql`'[]'`),
+  status: text('status', { enum: ['pending', 'accepted', 'rejected', 'edited'] })
+    .notNull()
+    .default('pending'),
+  resultingWorkItemId: text('resulting_work_item_id').references(() => workItems.id, {
+    onDelete: 'set null',
+  }),
+  generatedBy: text('generated_by'),
+  createdAt: createdAt(),
+  updatedAt: updatedAt(),
+});
+
 export const automationRuns = sqliteTable('automation_runs', {
   id: id(),
   userId: userId(),
@@ -242,3 +303,7 @@ export type Question = typeof questions.$inferSelect;
 export type NewQuestion = typeof questions.$inferInsert;
 export type AutomationRun = typeof automationRuns.$inferSelect;
 export type NewAutomationRun = typeof automationRuns.$inferInsert;
+export type Discovery = typeof discoveries.$inferSelect;
+export type NewDiscovery = typeof discoveries.$inferInsert;
+export type DiscoveryDraft = typeof discoveryDrafts.$inferSelect;
+export type NewDiscoveryDraft = typeof discoveryDrafts.$inferInsert;
