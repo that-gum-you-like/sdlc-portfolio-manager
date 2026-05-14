@@ -12,7 +12,7 @@ The system SHALL expose a REST API rooted at `/api/v1` providing CRUD on work it
 - **THEN** the system SHALL set status to `in_progress` and assignee to the agent atomically, returning the updated item; if the item is not in `ready`, the system SHALL respond 409
 
 ### Requirement: `pc` CLI for agent invocation
-The system SHALL ship a `pc` CLI in `packages/cli/` providing at minimum: `pc next` (claim next ready task), `pc done <id>` (mark in_review), `pc comment <id> <message>`, `pc file <type> <title>` (create a work item).
+The system SHALL ship a `pc` CLI in `packages/cli/` providing at minimum: `pc next` (claim next ready task), `pc done <id>` (mark in_review), `pc comment <id> <message>`, `pc file <type> <title>` (create a work item), `pc ask <id> <message>` (file a question to a human, see `hitl` capability), `pc check-answer <question-id>` (poll for an answer).
 
 #### Scenario: Agent picks up next task via CLI
 - **WHEN** a Cursor agent runs `pc next --agent cursor-background-agent`

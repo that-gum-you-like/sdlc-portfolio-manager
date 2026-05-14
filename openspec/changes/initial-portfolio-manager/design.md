@@ -86,7 +86,23 @@ Cursor's Background Agents are the execution layer; this repo is the management 
 
 **Rationale**: Feature parity with the existing framework is a stated goal; opinionated seeds make first-run useful instead of empty. Persona content port lives in the follow-on `agentic-sdlc-framework-port` change.
 
-### Decision 9: Cursor skills format = `.cursor/skills/<name>/SKILL.md`
+### Decision 9b: HITL is async by default, with optional blocking wait
+
+**Chosen**: `pc ask` returns immediately by default (fire-and-forget); agents that want to block call `pc ask --wait <seconds>` or `pc check-answer <id>`. The portfolio manager does not push answers to running agent processes — the agent decides whether to wait, poll, or pick up answers on its next `pc next` invocation.
+
+**Considered**: Always-blocking ask (matches a sync RPC mental model); push via long-poll / SSE / websocket.
+
+**Rationale**: Cursor Background Agents are short-lived processes that may not be alive when an answer arrives hours later. Sync would force the agent to hold the process open and burn cost waiting. The async default lets the agent finish what it can, exit, and pick up the answer on its next run. The `--wait` flag exists for foreground / interactive sessions where blocking is fine. Push-based delivery is deferred until there's a real use case it solves better than polling.
+
+### Decision 9c: needs-human is a real status, not a flag
+
+**Chosen**: `needs-human` is one of the work-item statuses, with its own Kanban column, restored to `previous_status` automatically when all open questions resolve.
+
+**Considered**: A boolean `is_blocked` flag on top of the existing in_progress status.
+
+**Rationale**: A column is visible at a glance — "I have 5 things waiting on me right now" is a more useful default view than "find items with is_blocked=true." A flag would also obscure the fact that an agent is paused, leading to "why isn't this moving?" questions. Restoring to the prior status on resolution means status history stays clean.
+
+### Decision 10: Cursor skills format = `.cursor/skills/<name>/SKILL.md`
 
 **Chosen**: Skills are folders with a `SKILL.md` containing YAML frontmatter + markdown body, matching the convention OpenSpec installed under `.cursor/skills/` at init.
 

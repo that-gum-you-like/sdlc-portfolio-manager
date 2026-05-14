@@ -106,16 +106,38 @@
 - [ ] 14.2 First-run: create data dir, run migrations, seed library
 - [ ] 14.3 Health-check endpoint `GET /api/v1/health` returning version + db status
 
-## 15. Cursor Automations integration
+## 15. Human-in-the-loop (HITL) thread
 
-- [ ] 15.1 Confirm Cursor Automations on-disk format (consult Cursor docs); document the file path + JSON schema before locking the publish writer
-- [ ] 15.2 Extend `library_entries.type` enum to include `automation` alongside `rule` and `skill`
-- [ ] 15.3 Automation frontmatter schema: `prompt` (markdown), `cron` (string), `scope` (repo/labels/globs), `resultHook` (enum: `file-findings-as-bugs` | `comment-only` | `custom`)
-- [ ] 15.4 Cron expression validation in the editor + on save
-- [ ] 15.5 `GET /api/v1/work-items/next-ready` with atomic claim semantics (see specs/cursor-automations)
-- [ ] 15.6 `POST /api/v1/automation-results` accepting comments + new work items linked to a parent
-- [ ] 15.7 `automation_runs` table: `id`, `automation_entry_id`, `started_at`, `completed_at`, `status`, `summary`, `created_item_ids`
-- [ ] 15.8 Publish flow extension: emit Cursor Automation file(s) into target repo and record `publish_history` row
-- [ ] 15.9 Automation-detail page: prompt, cron next-fires, run history list, manual "run now" trigger (sends the prompt to Cursor via documented mechanism — TBD in 15.1)
-- [ ] 15.10 Seed two automations in `cursor-templates/`: `weekly-security-review` and `weekly-bug-triage`
-- [ ] 15.11 Concurrency test: two `next-ready` calls vs one ready item — exactly one wins
+- [ ] 15a.1 Schema: `questions` table (`id`, `work_item_id`, `asked_by`, `addressed_to`, `body`, `status`, `asked_at`, `answered_at`, `answer_id`, `previous_status`)
+- [ ] 15a.2 Schema: `notifications` table (`id`, `recipient`, `kind`, `source_id`, `work_item_id`, `created_at`, `read_at`)
+- [ ] 15a.3 Schema: `mentions` table (`id`, `source_type`, `source_id`, `mentioned_handle`, `resolved_user_id`, `resolved_agent_name`)
+- [ ] 15a.4 Status enum extended with `needs-human`; transition validator handles entering + restoring
+- [ ] 15a.5 `POST /api/v1/work-items/:id/questions` — file a question; transition item to needs-human
+- [ ] 15a.6 `POST /api/v1/questions/:id/answer` — answer; auto-restore work item to `previous_status` when all open questions on the item resolve
+- [ ] 15a.7 `GET /api/v1/questions?recipient=<handle>&status=open` — power the inbox
+- [ ] 15a.8 `@-mention` parser (regex + handle resolver against users + personas); shared across comments and questions
+- [ ] 15a.9 Mention extraction runs on every comment/question write; inserts `mentions` and `notifications` rows
+- [ ] 15a.10 CLI `pc ask <id> <message>` (with `--wait <seconds>` blocking variant, exit code 4 on timeout)
+- [ ] 15a.11 CLI `pc check-answer <question-id>` (exit code 5 if unanswered)
+- [ ] 15a.12 `pc next` response payload extended with `pending_answers` for the claiming agent
+- [ ] 15a.13 UI: Kanban board adds `needs-human` column with question-count badge per card
+- [ ] 15a.14 UI: item detail page renders "Pending questions" section + answered-questions collapsible
+- [ ] 15a.15 UI: mentions rendered as clickable links to user/agent detail pages
+- [ ] 15a.16 UI: `/inbox` route with grouped sections (questions, mentions, assignments)
+- [ ] 15a.17 UI: global nav inbox badge with unread count, polled or via SSE/websocket (pick simplest first)
+- [ ] 15a.18 Notification channel interface — `in-app` impl now; webhook/email/WA later as no-op stubs
+- [ ] 15a.19 Tests: ask-answer round trip transitions status correctly; multiple-questions hold needs-human; mention parser handles edge cases (code blocks, escape, unknown handle)
+
+## 16. Cursor Automations integration
+
+- [ ] 16.1 Confirm Cursor Automations on-disk format (consult Cursor docs); document the file path + JSON schema before locking the publish writer
+- [ ] 16.2 Extend `library_entries.type` enum to include `automation` alongside `rule` and `skill`
+- [ ] 16.3 Automation frontmatter schema: `prompt` (markdown), `cron` (string), `scope` (repo/labels/globs), `resultHook` (enum: `file-findings-as-bugs` | `comment-only` | `custom`)
+- [ ] 16.4 Cron expression validation in the editor + on save
+- [ ] 16.5 `GET /api/v1/work-items/next-ready` with atomic claim semantics (see specs/cursor-automations)
+- [ ] 16.6 `POST /api/v1/automation-results` accepting comments + new work items linked to a parent
+- [ ] 16.7 `automation_runs` table: `id`, `automation_entry_id`, `started_at`, `completed_at`, `status`, `summary`, `created_item_ids`
+- [ ] 16.8 Publish flow extension: emit Cursor Automation file(s) into target repo and record `publish_history` row
+- [ ] 16.9 Automation-detail page: prompt, cron next-fires, run history list, manual "run now" trigger (sends the prompt to Cursor via documented mechanism — TBD in 16.1)
+- [ ] 16.10 Seed two automations in `cursor-templates/`: `weekly-security-review` and `weekly-bug-triage`
+- [ ] 16.11 Concurrency test: two `next-ready` calls vs one ready item — exactly one wins

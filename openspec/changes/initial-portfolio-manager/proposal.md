@@ -12,6 +12,7 @@ The user has Cursor at work but lacks an Azure-DevOps-style portfolio/work-item 
 - **NEW** Seed `.cursor/rules/` templates in `cursor-templates/` that wire Cursor Background Agents into the protocol
 - **NEW** Data model uses UUIDs and `user_id` scoping from day one; auth stubbed to a `local-user` constant so multi-user is a stub-swap, not a rewrite
 - **NEW** Cursor Automations integration: the portfolio manager exposes endpoints for Cursor Automations to (a) auto-claim work items moved to `ready` and (b) trigger scheduled prompts (recurring bug reviews, security reviews). Automation definitions are stored in the library so the user can manage them in-UI.
+- **NEW** Human-in-the-loop (HITL) thread: agents can tag the user with questions / decisions / blockers, the user can tag agents back, and the work item visibly enters a `needs-human` state until answered. Comments support `@username` and `@agent-name` mentions; an inbox surfaces all open questions across all items.
 
 ## Capabilities
 
@@ -23,6 +24,7 @@ The user has Cursor at work but lacks an Azure-DevOps-style portfolio/work-item 
 - `agent-protocol`: REST API contract + `pc` CLI used by Cursor agents to discover, claim, update, and file work items
 - `local-persistence`: SQLite schema, migrations, and identity model designed single-user-first / multi-user-ready
 - `cursor-automations`: First-class integration with Cursor Automations — endpoint contract for "give me the next ready item," scheduled prompts (bug/security review crons) defined in-library and registered with Cursor, and a UI surface for managing automation definitions
+- `hitl`: Human-in-the-loop thread — structured question/answer model that agents and humans use to unblock each other, with `@-mention` parsing in comments, a unified inbox, `needs-human` work-item state, and async/blocking CLI commands for agents
 
 ### Modified Capabilities
 

@@ -1,7 +1,7 @@
 ## ADDED Requirements
 
 ### Requirement: Kanban board view
-The system SHALL render a Kanban board with one column per work-item status (`backlog`, `ready`, `in_progress`, `in_review`, `done`), showing work items as cards.
+The system SHALL render a Kanban board with one column per work-item status (`backlog`, `ready`, `in_progress`, `needs-human`, `in_review`, `done`), showing work items as cards. The `needs-human` column SHALL visually distinguish cards (e.g., colored border or icon) and show the count of open questions on each.
 
 #### Scenario: Board reflects current state
 - **WHEN** a user opens the board view
@@ -38,3 +38,17 @@ The system SHALL allow filtering the board and backlog by label, assignee, and i
 #### Scenario: Filter by assignee = cursor-background-agent
 - **WHEN** a user selects "assignee: cursor-background-agent" in the filter bar
 - **THEN** the system SHALL re-render the board to show only items assigned to that agent
+
+### Requirement: Item detail page renders questions thread
+The item detail page SHALL render any open and recently-answered questions as a distinct thread above (or visually separated from) the general comments — open questions prominent with an inline answer form, answered questions collapsible.
+
+#### Scenario: Open item with two open questions
+- **WHEN** a user opens an item with two open questions and four comments
+- **THEN** the system SHALL render the two questions in a "Pending questions" section at the top with answer forms, and the four comments in the standard comments thread below
+
+### Requirement: Mentions render as interactive links
+The system SHALL render `@<name>` mentions in comment and question bodies as clickable links to the mentioned user's or agent's detail page, and SHALL visually distinguish them from plain text.
+
+#### Scenario: Click an @-mention
+- **WHEN** a user clicks an `@frontend-developer` mention in a rendered comment
+- **THEN** the system SHALL navigate to `/agents/frontend-developer` (or `/users/<id>` for human mentions)

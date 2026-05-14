@@ -1,7 +1,7 @@
 ## ADDED Requirements
 
 ### Requirement: Work-item types and lifecycle
-The system SHALL support four work-item types — `epic`, `story`, `task`, `bug` — each with a status of `backlog`, `ready`, `in_progress`, `in_review`, `done`, or `cancelled`.
+The system SHALL support four work-item types — `epic`, `story`, `task`, `bug` — each with a status of `backlog`, `ready`, `in_progress`, `needs-human`, `in_review`, `done`, or `cancelled`. The `needs-human` status indicates work is paused awaiting human input on one or more open questions (see `hitl` capability).
 
 #### Scenario: Create a story in the backlog
 - **WHEN** a human or agent creates a new work item with type `story` and no explicit status
@@ -14,6 +14,10 @@ The system SHALL support four work-item types — `epic`, `story`, `task`, `bug`
 #### Scenario: Reject an invalid status transition
 - **WHEN** a client attempts to set status `done` on a work item currently in `backlog`
 - **THEN** the system SHALL reject the request with a 400 error explaining the allowed next states
+
+#### Scenario: needs-human is a valid transition from in_progress
+- **WHEN** an in_progress work item has a question filed against it
+- **THEN** the system SHALL transition status to `needs-human` and store `previous_status: in_progress` for restoration when all questions resolve
 
 ### Requirement: Parent/child links
 The system SHALL allow any work item to declare a parent work item, forming a tree (epic → stories → tasks/bugs).
