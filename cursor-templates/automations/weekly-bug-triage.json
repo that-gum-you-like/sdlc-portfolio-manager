@@ -1,0 +1,12 @@
+{
+  "name": "Weekly bug triage",
+  "description": "Sweep the backlog for unrouted bugs; assign labels, suggest assignee personas, and surface stale items.",
+  "type": "automation",
+  "frontmatter": {
+    "gate": null,
+    "prompt": "Walk the backlog of work items where `type=bug` and `status=backlog`. For each:\n\n1. Read the title + description.\n2. Suggest appropriate labels (frontend, backend, ai, infra, etc.) based on the affected area.\n3. Suggest an assignee persona from the seeded library (Roy for backend, Jen for frontend, Moss for AI, etc.).\n4. Flag any bug older than 14 days that has had no comments or status changes as `stale`.\n\nApply these as PATCH operations via the API. End with a summary comment on the parent triage item listing what changed and what couldn't be auto-routed.",
+    "cron": "0 8 * * MON",
+    "scope": {},
+    "resultHook": "comment-only"
+  }
+}

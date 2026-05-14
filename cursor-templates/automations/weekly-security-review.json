@@ -1,0 +1,14 @@
+{
+  "name": "Weekly security review",
+  "description": "Scheduled review of recent code changes for security issues; files findings as bugs in the work item store.",
+  "type": "automation",
+  "frontmatter": {
+    "gate": null,
+    "prompt": "Review the changes merged into the default branch over the past 7 days for security issues:\n\n- Hardcoded secrets, credentials, or tokens (env var leaks, .env in commit history)\n- SQL/command injection risk on any user-input boundary\n- Missing authorization checks on new API routes\n- Unsafe deserialization or eval-style execution\n- Dependency CVEs introduced in the diff\n- XSS / CSRF gaps in new UI routes\n\nFor each finding: file a `bug` work item with type=`bug`, label `security`, a short title, and a description that includes the file:line reference plus suggested remediation. Skip false positives silently. End with a summary comment on the parent review item listing the bug ids you filed.",
+    "cron": "0 9 * * MON",
+    "scope": {
+      "labels": ["security-review"]
+    },
+    "resultHook": "file-findings-as-bugs"
+  }
+}

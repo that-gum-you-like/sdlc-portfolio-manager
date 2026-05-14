@@ -200,6 +200,25 @@ export const evidenceLinks = sqliteTable('evidence_links', {
   createdAt: createdAt(),
 });
 
+export const automationRuns = sqliteTable('automation_runs', {
+  id: id(),
+  userId: userId(),
+  projectId: text('project_id').references(() => projects.id, { onDelete: 'cascade' }),
+  automationEntryId: text('automation_entry_id'),
+  automationSlug: text('automation_slug'),
+  startedAt: text('started_at')
+    .notNull()
+    .$defaultFn(() => new Date().toISOString()),
+  completedAt: text('completed_at'),
+  status: text('status', { enum: ['running', 'completed', 'failed', 'cancelled'] })
+    .notNull()
+    .default('running'),
+  summary: text('summary'),
+  createdItemIdsJson: text('created_item_ids_json')
+    .notNull()
+    .default(sql`'[]'`),
+});
+
 export const migrations = sqliteTable('_migrations', {
   id: integer('id').primaryKey({ autoIncrement: true }),
   name: text('name').notNull().unique(),
@@ -221,3 +240,5 @@ export type Notification = typeof notifications.$inferSelect;
 export type EvidenceLink = typeof evidenceLinks.$inferSelect;
 export type Question = typeof questions.$inferSelect;
 export type NewQuestion = typeof questions.$inferInsert;
+export type AutomationRun = typeof automationRuns.$inferSelect;
+export type NewAutomationRun = typeof automationRuns.$inferInsert;

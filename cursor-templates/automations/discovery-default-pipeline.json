@@ -1,0 +1,14 @@
+{
+  "name": "Discovery default pipeline",
+  "description": "Polls for discoveries awaiting generation; runs the built-in default prompt against the raw dump and posts drafts.",
+  "type": "automation",
+  "frontmatter": {
+    "gate": null,
+    "prompt": "You are running the default discovery generation pipeline. For the discovery whose id is provided in context:\n\n1. Read its `raw_dump` field.\n2. Produce structured drafts:\n   - At minimum one `epic` framing the work\n   - One or more `story` drafts grouped under that epic, each with 2-4 specific acceptance criteria (AC-1, AC-2, ...)\n   - Where the dump implies decoupling or parallelism, file one or more `parallelization-stream` drafts referencing the relevant story drafts via `relationship_drafts: [{ target_draft_id, type: \"depends_on\" }]`.\n3. Keep drafts in the user's voice. If the dump is ambiguous, file a HITL question on the discovery instead of guessing.\n4. POST every draft to /api/v1/discoveries/:id/drafts and mark the discovery `status: reviewing` on completion.",
+    "cron": "* * * * *",
+    "scope": {
+      "pollEndpoint": "/api/v1/discoveries?status=draft&generation_requested=true"
+    },
+    "resultHook": "custom"
+  }
+}
