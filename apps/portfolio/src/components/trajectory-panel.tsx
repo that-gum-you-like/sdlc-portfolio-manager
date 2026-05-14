@@ -15,6 +15,8 @@ type EventKind =
   | 'validation_run'
   | 'automation_run'
   | 'override'
+  | 'handoff'
+  | 'link'
   | 'publish';
 
 interface TrajectoryEvent {
@@ -42,6 +44,8 @@ const KIND_STYLE: Record<EventKind, { glyph: string; tone: string; label: string
   validation_run: { glyph: '●', tone: '#0f172a', label: 'gate' },
   automation_run: { glyph: '⚙', tone: '#52525b', label: 'automation' },
   override: { glyph: '⚠', tone: '#b91c1c', label: 'override' },
+  handoff: { glyph: '⇄', tone: '#0f172a', label: 'handoff' },
+  link: { glyph: '⌥', tone: '#0f172a', label: 'link' },
   publish: { glyph: '↗', tone: '#0f172a', label: 'publish' },
 };
 
@@ -61,6 +65,8 @@ const ALL_KINDS: EventKind[] = [
   'validation_run',
   'automation_run',
   'override',
+  'handoff',
+  'link',
 ];
 
 export function TrajectoryPanel({ workItemId }: Props) {

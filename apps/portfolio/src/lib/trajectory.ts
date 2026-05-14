@@ -4,12 +4,14 @@ import { getDb } from '@/db';
 import {
   automationRuns,
   comments,
+  handoffs,
   mentions,
   notifications,
   overrides,
   publishHistory,
   questions,
   validationRuns,
+  workItemLinks,
   workItemStatusChanges,
   workItems,
 } from '@/db/schema';
@@ -27,6 +29,8 @@ export type TrajectoryEventKind =
   | 'validation_run'
   | 'automation_run'
   | 'override'
+  | 'handoff'
+  | 'link'
   | 'publish';
 
 export interface TrajectoryEvent {
@@ -259,9 +263,48 @@ export function buildTrajectory(workItemId: string): TrajectoryEvent[] {
     });
   }
 
-  // 8) Publishes from the library that target this project — only included
-  //    when the user explicitly requests them via filter, since they're not
-  //    per-item. Skip for now; can layer in later.
+  // 8) Handoffs (P2 — explicit agent → agent delegation)
+  const hs = db
+    .select()
+    .from(handoffs)
+    .where(and(eq(handoffs.workItemId, workItemId), eq(handoffs.userId, userId)))
+    .orderBy(asc(handoffs.createdAt))
+    .all();
+  for (const h of hs) {
+    events.push({
+      id: `handoff:${h.id}`,
+      kind: 'handoff',
+      at: h.createdAt,
+      actor: h.fromAgent,
+      title: `handed off → ${h.toAgent}`,
+      detail: h.reason,
+      meta: { fromAgent: h.fromAgent, toAgent: h.toAgent, context: h.contextBlob },
+    });
+  }
+
+  // 9) Work-item links (P5 — PRs / commits / deploys)
+  const links = db
+    .select()
+    .from(workItemLinks)
+    .where(
+      and(eq(workItemLinks.workItemId, workItemId), eq(workItemLinks.userId, userId)),
+    )
+    .orderBy(asc(workItemLinks.createdAt))
+    .all();
+  for (const l of links) {
+    events.push({
+      id: `link:${l.id}`,
+      kind: 'link',
+      at: l.createdAt,
+      actor: l.createdBy,
+      title: `${l.kind} linked: ${l.ref}`,
+      detail: l.url,
+      meta: { provider: l.provider, kind: l.kind, ref: l.ref, url: l.url, state: l.state },
+    });
+  }
+
+  // 10) Publishes from the library that target this project — not per-item;
+  //     surface as a filter on a future timeline view if needed.
   void notifications;
   void publishHistory;
 

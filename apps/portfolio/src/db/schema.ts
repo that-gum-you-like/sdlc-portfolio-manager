@@ -340,6 +340,42 @@ export const automationRuns = sqliteTable('automation_runs', {
     .default(sql`'[]'`),
 });
 
+export const handoffs = sqliteTable('handoffs', {
+  id: id(),
+  userId: userId(),
+  projectId: text('project_id').references(() => projects.id, { onDelete: 'cascade' }),
+  workItemId: text('work_item_id')
+    .notNull()
+    .references(() => workItems.id, { onDelete: 'cascade' }),
+  fromAgent: text('from_agent').notNull(),
+  toAgent: text('to_agent').notNull(),
+  reason: text('reason').notNull(),
+  contextBlob: text('context_blob'),
+  createdAt: createdAt(),
+  resolvedAt: text('resolved_at'),
+  resolution: text('resolution', {
+    enum: ['accepted', 'declined', 'reassigned', 'completed'],
+  }),
+});
+
+export const workItemLinks = sqliteTable('work_item_links', {
+  id: id(),
+  userId: userId(),
+  projectId: text('project_id').references(() => projects.id, { onDelete: 'cascade' }),
+  workItemId: text('work_item_id')
+    .notNull()
+    .references(() => workItems.id, { onDelete: 'cascade' }),
+  provider: text('provider', {
+    enum: ['github', 'gitlab', 'bitbucket', 'local-git', 'other'],
+  }).notNull(),
+  kind: text('kind', { enum: ['branch', 'commit', 'pr', 'mr', 'deploy', 'doc'] }).notNull(),
+  ref: text('ref').notNull(),
+  url: text('url').notNull(),
+  state: text('state'),
+  createdAt: createdAt(),
+  createdBy: text('created_by'),
+});
+
 export const workItemStatusChanges = sqliteTable('work_item_status_changes', {
   id: id(),
   userId: userId(),
@@ -391,3 +427,7 @@ export type OverrideRow = typeof overrides.$inferSelect;
 export type NewOverrideRow = typeof overrides.$inferInsert;
 export type WorkItemStatusChange = typeof workItemStatusChanges.$inferSelect;
 export type NewWorkItemStatusChange = typeof workItemStatusChanges.$inferInsert;
+export type WorkItemLink = typeof workItemLinks.$inferSelect;
+export type NewWorkItemLink = typeof workItemLinks.$inferInsert;
+export type Handoff = typeof handoffs.$inferSelect;
+export type NewHandoff = typeof handoffs.$inferInsert;

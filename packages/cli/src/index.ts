@@ -435,4 +435,90 @@ program
     }
   });
 
+// pc link <id> --url <url> [--ref <ref>] — attach a PR / commit / branch to a work item
+program
+  .command('link <id>')
+  .description('Attach a PR, commit, branch, or deploy URL to a work item. Provider + kind auto-inferred from the URL.')
+  .requiredOption('--url <url>', 'The URL to link (PR, commit, deploy, etc.)')
+  .option('--ref <ref>', 'Override the ref (else inferred from URL)')
+  .option('--kind <kind>', 'pr | mr | commit | branch | deploy | doc (else inferred)')
+  .option('--provider <provider>', 'github | gitlab | bitbucket | local-git | other (else inferred)')
+  .action(async (id: string, opts: { url: string; ref?: string; kind?: string; provider?: string }) => {
+    const cfg = getGlobalOpts();
+    const payload: Record<string, unknown> = { url: opts.url };
+    if (opts.ref) payload.ref = opts.ref;
+    if (opts.kind) payload.kind = opts.kind;
+    if (opts.provider) payload.provider = opts.provider;
+    try {
+      const { data } = await apiRequest<{ link: { id: string; kind: string; ref: string; url: string } }>(
+        cfg.apiUrl,
+        'POST',
+        `/api/v1/work-items/${id}/links`,
+        payload,
+      );
+      const l = data?.link;
+      if (l) process.stdout.write(`${l.id}\t${l.kind}\t${l.ref}\t${l.url}\n`);
+    } catch (err) {
+      handleApiError(err);
+    }
+  });
+
+// pc quick <type> <title> — fast-path bypassing the backlog for trivial requests
+program
+  .command('quick <type> <title> [description...]')
+  .description('Quick-file a work item directly to ready, assigned to PC_QUICK_ASSIGNEE (or --to). Skips the backlog.')
+  .option('--to <assignee>', 'Override the quick assignee (else PC_QUICK_ASSIGNEE env, then PC_AGENT)')
+  .option('--label <label...>', 'Extra labels (always tagged "quick")')
+  .action(
+    async (
+      type: string,
+      title: string,
+      descriptionParts: string[],
+      opts: { to?: string; label?: string[] },
+    ) => {
+      const cfg = getGlobalOpts();
+      const assignee = opts.to ?? process.env.PC_QUICK_ASSIGNEE ?? cfg.agent;
+      const description = descriptionParts.join(' ').trim() || readStdinSync().trim();
+      const labels = ['quick', ...(opts.label ?? [])];
+
+      let projectId: string | undefined;
+      if (!cfg.project) {
+        process.stderr.write('No project — set PC_PROJECT or --project <slug>\n');
+        process.exit(1);
+      }
+      try {
+        const lookup = await apiRequest<{ project: { id: string } }>(
+          cfg.apiUrl,
+          'GET',
+          `/api/v1/projects/${cfg.project}`,
+        );
+        projectId = lookup.data?.project.id;
+      } catch (err) {
+        handleApiError(err);
+      }
+
+      const payload: Record<string, unknown> = {
+        projectId,
+        type,
+        title,
+        status: 'ready',
+        assignee,
+        labels,
+      };
+      if (description) payload.description = description;
+
+      try {
+        const { data } = await apiRequest<{ workItem: WorkItemSummary }>(
+          cfg.apiUrl,
+          'POST',
+          '/api/v1/work-items',
+          payload,
+        );
+        process.stdout.write(`${data?.workItem.id}\tready\t${assignee}\n`);
+      } catch (err) {
+        handleApiError(err);
+      }
+    },
+  );
+
 program.parseAsync().catch((err: unknown) => handleApiError(err));

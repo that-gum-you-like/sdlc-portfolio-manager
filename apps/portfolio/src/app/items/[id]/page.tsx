@@ -13,6 +13,7 @@ import { CommentsThread } from '@/components/comments-thread';
 import { PendingQuestions } from '@/components/pending-questions';
 import { ValidationPanel } from '@/components/validation-panel';
 import { TrajectoryPanel } from '@/components/trajectory-panel';
+import { LinksPanel } from '@/components/links-panel';
 import { StatusControl } from './status-control';
 
 export const dynamic = 'force-dynamic';
@@ -198,6 +199,7 @@ export default async function ItemDetailPage({ params }: Params) {
       </div>
 
       <ValidationPanel workItemId={item.id} />
+      <LinksPanel workItemId={item.id} itemStatus={item.status} />
       <TrajectoryPanel workItemId={item.id} />
       <PendingQuestions workItemId={item.id} />
       <CommentsThread workItemId={item.id} />
