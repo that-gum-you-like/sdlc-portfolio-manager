@@ -1,0 +1,28 @@
+---
+name: agent-team-orchestration
+description: Hard constraints for running 2+ stories/agents in parallel — isolation by default, single integrator, per-worker review gates. Applies whenever more than one story or agent runs concurrently.
+globs: ["**/*"]
+alwaysApply: true
+---
+
+# Agent team orchestration
+
+Parallelism requires an explicit contract. The moment **more than one story or agent** runs at once, these constraints apply. The mechanics live in the `parallel-story-orchestrator` skill — read it before launching a wave. This rule states the non-negotiable defaults so they are never treated as project-local extensions.
+
+## When this applies
+
+Two or more stories, workers, or background agents active concurrently — batches, waves, tranches, or any "run these in parallel" request.
+
+## Hard constraints (defaults, not extensions)
+
+1. **Isolation by default.** Any parallel work requires explicit working-tree isolation, named and created *before* workers start. Default: one **git worktree + branch per story** (`git worktree add ../wt-<story-id> <integration_branch>`). Docker volumes or separate clones are acceptable substitutes. Two agents sharing a working tree is forbidden — agents do not "just know" to stay on their own branch.
+2. **Single integrator.** Exactly one agent — the orchestrator — merges. Workers implement and commit on their own branch only; they never push to or merge the integration branch. This boundary is architectural, not a convention.
+3. **Same-file sequencing at scheduling time.** Run a file-overlap scan before launch. Stories touching the same file go in different waves — one lands, the other rebases. Never "resolve at merge time."
+4. **No self-certification.** Each worker's review gate (independent QA + `code-vulnerability-analysis` or equivalent) runs inside the worker before it reports done. The tranche PR is a delivery vehicle, never the review checkpoint. A single review over a merged tranche diff does not satisfy this.
+5. **TDD evidence verified at merge.** The orchestrator rejects any worker branch whose history lacks a failing-test commit before the passing-test commit. "Tests pass now" is insufficient.
+
+## On conflict
+
+If a project overlay relaxes any constraint above, treat it as a conflict per `overlay-precedence` (`stop_and_report`) — these are safety defaults, not preferences.
+
+Pairs with: `parallel-story-orchestrator` (skill), `story-and-tdd-first`, `agent-handoff`, `delivery-methodology`, `overlay-precedence`.

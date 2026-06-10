@@ -1,0 +1,40 @@
+---
+name: agent-skills-awareness
+description: Route tasks to the correct skill before acting. Read SKILL.md — do not rely on memory.
+globs: ["**/*"]
+alwaysApply: true
+---
+
+# Agent skills awareness
+
+Before planning, stories, design, architecture, coding, testing, or reviewing — check `.cursor/skills/` for a matching skill. Read the relevant `SKILL.md` before acting.
+
+## Skill router
+
+| Task | Skill | Folder |
+|------|-------|--------|
+| 2+ stories at once, batch / wave / tranche, parallel agents | `parallel-story-orchestrator` | `parallel-story-orchestrator/` |
+| User stories, backlog, INVEST, sprint planning | `user-story-generator` | `user-story-generator-cursor/` |
+| Product / UX / design direction | `jony-ive-product-design` | `jony-ive-product-design/` |
+| TDD, failing tests first, red/green/refactor | `tdd-workflow` | `tdd-workflow/` |
+| Security review before story done | `code-vulnerability-analysis` | `code-vulnerability-analysis/` |
+| Architecture, ADRs, system design | `architecture-designer` | `architecture-designer/` |
+| OpenSpec change lifecycle | `openspec-*` | matching folder |
+| Story-done checklist | `gt-story-done` | `gt-story-done/` |
+| Agent memory read/write | `memory-protocol` | `memory-protocol/` |
+| Repo bootstrap | `gt-project-bootstrap` | `gt-project-bootstrap/` |
+
+**Mandatory:** user-story creation → `user-story-generator`. Product/UX design → `jony-ive-product-design`. Story implementation → `tdd-workflow`. **2+ stories run concurrently → `parallel-story-orchestrator` (single agent must not implement multiple stories itself).** Before done → `code-vulnerability-analysis` (or quick Cursor review-security if scope is tiny — note which in work item comment).
+
+## Deliverable paths
+
+Resolve output directories from `project-config.yaml`:
+
+- Backlog: `planning.backlog_dir` (default `docs/backlog/`)
+- Security: `planning.security_output_dir` (default `docs/security/`)
+
+## When no skill applies
+
+Say so briefly in work notes and follow repo rules. Cite skill results in planning-system comments when used.
+
+Pairs with: `delivery-methodology`, `story-and-tdd-first`, `persona-routing`.
